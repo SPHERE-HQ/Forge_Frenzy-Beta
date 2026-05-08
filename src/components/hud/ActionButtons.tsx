@@ -2,15 +2,30 @@ import { useRef, useCallback } from "react";
 import { useGameStore } from "../../stores/gameStore";
 import { WEAPONS } from "../../constants/game";
 
+const BASE = import.meta.env.BASE_URL ?? "/";
+
+const IC = {
+  skill:  `${BASE}assets/ui/controls/icon_fire.svg`,
+  scope:  `${BASE}assets/ui/controls/icon_crosshair.svg`,
+  jump:   `${BASE}assets/ui/controls/icon_jump.svg`,
+  crouch: `${BASE}assets/ui/controls/icon_arrow.svg`,
+  reload: `${BASE}assets/ui/controls/icon_menu.svg`,
+  drop:   `${BASE}assets/ui/controls/icon_shield.svg`,
+  build:  `${BASE}assets/ui/controls/icon_menu.svg`,
+  shoot:  `${BASE}assets/ui/controls/icon_crosshair.svg`,
+  punch:  `${BASE}assets/ui/controls/icon_fire.svg`,
+  btn:    `${BASE}assets/ui/controls/button_circle.svg`,
+};
+
 export default function ActionButtons() {
-  const playerShoot = useGameStore((s) => s.playerShoot);
-  const playerReload = useGameStore((s) => s.playerReload);
-  const playerJump = useGameStore((s) => s.playerJump);
-  const playerCrouch = useGameStore((s) => s.playerCrouch);
-  const playerScope = useGameStore((s) => s.playerScope);
+  const playerShoot   = useGameStore((s) => s.playerShoot);
+  const playerReload  = useGameStore((s) => s.playerReload);
+  const playerJump    = useGameStore((s) => s.playerJump);
+  const playerCrouch  = useGameStore((s) => s.playerCrouch);
+  const playerScope   = useGameStore((s) => s.playerScope);
   const playerUseSkill = useGameStore((s) => s.playerUseSkill);
-  const dropWeapon = useGameStore((s) => s.dropWeapon);
-  const player = useGameStore((s) => s.player);
+  const dropWeapon    = useGameStore((s) => s.dropWeapon);
+  const player        = useGameStore((s) => s.player);
   const openBuildMenu = useGameStore((s) => s.openBuildMenu);
   const builderMachines = useGameStore((s) => s.builderMachines);
 
@@ -46,7 +61,7 @@ export default function ActionButtons() {
           onTouchStart={(e) => { e.preventDefault(); playerUseSkill(); }}
           onClick={playerUseSkill}
         >
-          {player.hero === "medic" ? "➕" : player.hero === "engineer" ? "⚙" : player.hero === "specter" ? "💀" : "⚡"}
+          <img src={IC.skill} className="btn-icon" alt="skill" />
         </button>
         {isRanged && (
           <button
@@ -54,7 +69,7 @@ export default function ActionButtons() {
             onTouchStart={(e) => { e.preventDefault(); playerScope(!player.isScoping); }}
             onClick={() => playerScope(!player.isScoping)}
           >
-            🔭
+            <img src={IC.scope} className="btn-icon" alt="scope" />
           </button>
         )}
       </div>
@@ -66,18 +81,18 @@ export default function ActionButtons() {
           onTouchStart={(e) => { e.preventDefault(); playerJump(); }}
           onClick={playerJump}
         >
-          ↑
+          <img src={IC.jump} className="btn-icon" alt="jump" />
         </button>
         <button
           className={`action-btn action-btn-crouch ${player.isCrouching ? "action-btn-active" : ""}`}
           onTouchStart={(e) => { e.preventDefault(); playerCrouch(!player.isCrouching); }}
           onClick={() => playerCrouch(!player.isCrouching)}
         >
-          ↓
+          <img src={IC.crouch} className="btn-icon btn-icon-flip" alt="crouch" />
         </button>
       </div>
 
-      {/* Row 3: Reload + Drop */}
+      {/* Row 3: Reload + Drop + Build */}
       <div className="action-row">
         {isRanged && (
           <button
@@ -85,7 +100,7 @@ export default function ActionButtons() {
             onTouchStart={(e) => { e.preventDefault(); playerReload(); }}
             onClick={playerReload}
           >
-            ↺
+            <img src={IC.reload} className="btn-icon" alt="reload" />
           </button>
         )}
         {player.weapon !== "unarmed" && (
@@ -94,7 +109,7 @@ export default function ActionButtons() {
             onTouchStart={(e) => { e.preventDefault(); dropWeapon(); }}
             onClick={dropWeapon}
           >
-            🗑
+            <img src={IC.drop} className="btn-icon" alt="drop" />
           </button>
         )}
         {nearbyMachine && (
@@ -103,7 +118,7 @@ export default function ActionButtons() {
             onTouchStart={(e) => { e.preventDefault(); openBuildMenu(nearbyMachine.id); }}
             onClick={() => openBuildMenu(nearbyMachine.id)}
           >
-            🔨
+            <img src={IC.build} className="btn-icon" alt="build" />
           </button>
         )}
       </div>
@@ -116,7 +131,7 @@ export default function ActionButtons() {
         onMouseDown={handleShootStart}
         onMouseUp={handleShootEnd}
       >
-        {player.weapon === "unarmed" ? "👊" : "🔫"}
+        <img src={player.weapon === "unarmed" ? IC.punch : IC.shoot} className="btn-icon btn-icon-shoot" alt="shoot" />
       </button>
 
       <style>{`
@@ -127,27 +142,41 @@ export default function ActionButtons() {
         .action-btn {
           border-radius: 50%;
           border: 2px solid rgba(255,255,255,0.25);
-          font-size: 18px;
           display: flex; align-items: center; justify-content: center;
           cursor: pointer; user-select: none; touch-action: none;
           transition: background 0.1s, transform 0.1s;
           background: rgba(0,0,0,0.55);
           color: #fff;
+          padding: 0;
+          position: relative;
+        }
+        .action-btn::before {
+          content: '';
+          position: absolute; inset: 0; border-radius: 50%;
+          background-image: url('${IC.btn}');
+          background-size: cover; background-position: center;
+          opacity: 0.35; pointer-events: none;
         }
         .action-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
         .action-btn-active { background: rgba(255,165,0,0.35) !important; border-color: #ff9800; }
         .action-btn-cd { opacity: 0.4; }
-        .action-btn-skill { width: 52px; height: 52px; border-color: #ff9800; }
-        .action-btn-scope { width: 44px; height: 44px; }
-        .action-btn-jump { width: 44px; height: 44px; font-size: 20px; }
-        .action-btn-crouch { width: 44px; height: 44px; font-size: 20px; }
-        .action-btn-reload { width: 44px; height: 44px; font-size: 22px; border-color: #4fc3f7; }
-        .action-btn-drop { width: 40px; height: 40px; font-size: 16px; border-color: #f44336; }
-        .action-btn-build { width: 44px; height: 44px; border-color: #ff9800; font-size: 20px; }
+        .btn-icon {
+          width: 55%; height: 55%; object-fit: contain;
+          position: relative; z-index: 1;
+          filter: invert(1) brightness(2);
+        }
+        .btn-icon-flip { transform: scaleY(-1); }
+        .btn-icon-shoot { width: 48%; height: 48%; }
+        .action-btn-skill  { width: 52px; height: 52px; border-color: #ff9800; }
+        .action-btn-scope  { width: 44px; height: 44px; }
+        .action-btn-jump   { width: 44px; height: 44px; }
+        .action-btn-crouch { width: 44px; height: 44px; }
+        .action-btn-reload { width: 44px; height: 44px; border-color: #4fc3f7; }
+        .action-btn-drop   { width: 40px; height: 40px; border-color: #f44336; }
+        .action-btn-build  { width: 44px; height: 44px; border-color: #ff9800; }
         .action-btn-shoot {
           width: 80px; height: 80px;
           border-radius: 50%;
-          font-size: 28px;
           background: rgba(255,50,50,0.6);
           border: 3px solid rgba(255,100,100,0.8);
           box-shadow: 0 0 20px rgba(255,50,50,0.3);

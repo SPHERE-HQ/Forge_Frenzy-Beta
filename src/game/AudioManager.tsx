@@ -15,14 +15,15 @@ const SFX_MAP: Record<string, string> = {
   footstep:     "assets/audio/sfx/sfx_footstep.mp3",
   footstep2:    "assets/audio/sfx/sfx_footstep2.mp3",
   explosion:    "assets/audio/sfx/sfx_explosion_small.mp3",
-  build_done:   "assets/audio/sfx/sfx_build_complete.mp3",
-  pickup:       "assets/audio/sfx/sfx_pickup_box.mp3",
-  respawn:      "assets/audio/sfx/sfx_respawn.mp3",
-  countdown:    "assets/audio/sfx/sfx_countdown.mp3",
-  ui_click:     "assets/audio/sfx/sfx_ui_click.mp3",
-  ui_select:    "assets/audio/sfx/sfx_ui_select_hero.mp3",
-  buddy_join:   "assets/audio/sfx/sfx_buddy_join.mp3",
-  victory:      "assets/audio/sfx/sfx_victory_jingle.mp3",
+  // Kenney interface sounds (OGG)
+  build_done:   "assets/audio/sfx/kenney/confirmation_001.ogg",
+  pickup:       "assets/audio/sfx/kenney/drop_001.ogg",
+  respawn:      "assets/audio/sfx/kenney/toggle_001.ogg",
+  countdown:    "assets/audio/sfx/kenney/bong_001.ogg",
+  ui_click:     "assets/audio/sfx/kenney/click_001.ogg",
+  ui_select:    "assets/audio/sfx/kenney/select_001.ogg",
+  buddy_join:   "assets/audio/sfx/kenney/glass_001.ogg",
+  victory:      "assets/audio/sfx/kenney/confirmation_002.ogg",
 };
 
 const BGM_MAP: Record<string, string> = {
@@ -30,7 +31,6 @@ const BGM_MAP: Record<string, string> = {
   victory: "assets/audio/bgm/bgm_victory.mp3",
 };
 
-// Global audio cache
 const audioCache: Record<string, HTMLAudioElement> = {};
 
 export function playSound(key: string, volume = 0.7) {
@@ -61,15 +61,17 @@ export function playBGM(key: string, volume = 0.4) {
   }
 }
 
-// Preload key SFX
-const PRELOAD_KEYS = ["shoot_m4a1", "shoot_mp5", "hit_body", "death", "reload", "footstep", "footstep2", "explosion", "build_done", "pickup"];
+const PRELOAD_KEYS = [
+  "shoot_m4a1", "shoot_mp5", "hit_body", "death", "reload",
+  "footstep", "footstep2", "explosion", "build_done", "pickup",
+  "ui_click", "ui_select",
+];
 
 export default function AudioManager() {
   const phase = useGameStore((s) => s.phase);
   const prevPhaseRef = useRef<string>("");
 
   useEffect(() => {
-    // Preload sounds
     PRELOAD_KEYS.forEach((key) => {
       const path = SFX_MAP[key];
       if (path && !audioCache[key]) {

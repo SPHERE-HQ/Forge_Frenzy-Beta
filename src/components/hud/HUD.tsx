@@ -5,6 +5,10 @@ import Joystick from "./Joystick";
 import ActionButtons from "./ActionButtons";
 import BuildMenu from "./BuildMenu";
 
+const BASE = import.meta.env.BASE_URL ?? "/";
+const CROSSHAIR = `${BASE}assets/ui/crosshairs/crosshair001.png`;
+const FONT_URL   = `${BASE}assets/fonts/KenneyFuture.ttf`;
+
 export default function HUD() {
   const player        = useGameStore((s) => s.player);
   const bots          = useGameStore((s) => s.bots);
@@ -27,115 +31,19 @@ export default function HUD() {
 
   return (
     <>
-      {/* ═══ TOP BAR ═══ */}
-      <div className="hud-top">
-        <div className="hud-score hud-score-a">
-          <span className="hud-score-kills">{teamAKills}</span>
-          <span className="hud-score-label">TIM A</span>
-        </div>
-
-        <div className="hud-center-top">
-          <span className="hud-timer">{formatTime(remaining)}</span>
-          <div className="hud-kill-info">
-            <span className="hud-kill-a">{teamAKills}</span>
-            <span className="hud-kill-sep"> / </span>
-            <span className="hud-kill-b">{teamBBotsDead}</span>
-            <span className="hud-kill-max"> (batas:{settings.killLimit})</span>
-          </div>
-        </div>
-
-        <div className="hud-score hud-score-b">
-          <span className="hud-score-label">TIM B</span>
-          <span className="hud-score-kills">{teamBBotsDead}</span>
-        </div>
-      </div>
-
-      {/* ═══ SCOREBOARD — kanan atas, tidak overlap tombol ═══ */}
-      <div className="hud-scoreboard">
-        {[...teamA, ...teamB].map((p) => (
-          <div
-            key={p.id}
-            className={`hud-sb-row ${p.id === player.id ? "hud-sb-me" : ""} ${!p.isAlive ? "hud-sb-dead" : ""}`}
-          >
-            <span className={`hud-sb-team ${p.team === "A" ? "hud-sb-team-a" : "hud-sb-team-b"}`}>
-              {p.team}
-            </span>
-            <span className="hud-sb-name">{p.nickname}</span>
-            <span className="hud-sb-kills">{p.kills}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* ═══ PLAYER INFO — kiri bawah ═══ */}
-      <div className="hud-player-info">
-        {/* HP */}
-        <div className="hud-hp-section">
-          <div className="hud-hp-bar-wrap">
-            <div
-              className="hud-hp-bar-fill"
-              style={{
-                width: `${(player.hp / player.maxHp) * 100}%`,
-                background:
-                  player.hp > player.maxHp * 0.5
-                    ? "#4caf50"
-                    : player.hp > player.maxHp * 0.25
-                    ? "#ff9800"
-                    : "#f44336",
-              }}
-            />
-          </div>
-          <span className="hud-hp-text">{player.hp}</span>
-        </div>
-        {/* Nama + hero */}
-        <div className="hud-player-meta">
-          <span className="hud-hero-badge" style={{ background: heroColor[player.hero] }}>
-            {player.hero.toUpperCase()}
-          </span>
-          <span className="hud-nickname">{player.nickname}</span>
-        </div>
-        {/* Skill */}
-        <div className="hud-skill-bar">
-          <span className="hud-skill-label">SKILL</span>
-          {player.skillCooldown > 0 ? (
-            <span className="hud-skill-cd">{Math.ceil(player.skillCooldown)}s</span>
-          ) : (
-            <span className="hud-skill-ready">SIAP</span>
-          )}
-        </div>
-      </div>
-
-      {/* ═══ AMMO — tengah kiri (di atas joystick, tidak tumpang-tindih) ═══ */}
-      <div className="hud-ammo">
-        {player.weapon !== "unarmed" ? (
-          <>
-            <div className="hud-ammo-counts">
-              <span className="hud-ammo-cur">{player.ammo}</span>
-              <span className="hud-ammo-sep">/</span>
-              <span className="hud-ammo-max">{player.maxAmmo}</span>
-            </div>
-            <span className="hud-ammo-weapon">{WEAPONS[player.weapon].name}</span>
-          </>
-        ) : (
-          <span className="hud-ammo-hint">Crafting dulu!</span>
-        )}
-      </div>
-
-      {/* ═══ JOYSTICK kiri bawah ═══ */}
-      <div className="hud-controls-left">
-        <Joystick side="left" />
-      </div>
-
-      {/* ═══ TOMBOL AKSI kanan bawah ═══ */}
-      <div className="hud-controls-right">
-        <ActionButtons />
-      </div>
-
-      {/* ═══ BUILD MENU ═══ */}
-      {isBuildMenuOpen && <BuildMenu />}
-
       <style>{`
+        @font-face {
+          font-family: 'KenneyFuture';
+          src: url('${FONT_URL}') format('truetype');
+          font-display: swap;
+        }
+
         /* ─────── GLOBAL ─────── */
         * { box-sizing: border-box; }
+        .hud-top, .hud-timer, .hud-score-kills, .hud-ammo-cur,
+        .hud-hp-text, .hud-hero-badge, .hud-sb-kills {
+          font-family: 'KenneyFuture', monospace;
+        }
 
         /* ─────── TOP BAR ─────── */
         .hud-top {
@@ -167,21 +75,25 @@ export default function HUD() {
         .hud-kill-sep  { color: #667; }
         .hud-kill-max  { color: #556; }
 
-        /* ─────── SCOREBOARD — fixed top-right, tidak tumpang-tindih tombol ─────── */
-        .hud-scoreboard {
+        /* ─────── CROSSHAIR — tengah layar ─────── */
+        .hud-crosshair {
           position: fixed;
-          top: 60px;
-          right: 8px;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          width: 40px; height: 40px;
           z-index: 50;
-          display: flex; flex-direction: column; gap: 1px;
-          background: rgba(0,0,0,0.52);
-          border-radius: 8px;
-          padding: 6px 8px;
-          width: 130px;
           pointer-events: none;
-          /* Batas tinggi agar tidak melampaui layar */
-          max-height: calc(50vh - 60px);
-          overflow: hidden;
+          opacity: 0.85;
+          image-rendering: pixelated;
+        }
+
+        /* ─────── SCOREBOARD ─────── */
+        .hud-scoreboard {
+          position: fixed; top: 60px; right: 8px; z-index: 50;
+          display: flex; flex-direction: column; gap: 1px;
+          background: rgba(0,0,0,0.52); border-radius: 8px; padding: 6px 8px;
+          width: 130px; pointer-events: none;
+          max-height: calc(50vh - 60px); overflow: hidden;
         }
         .hud-sb-row {
           display: flex; align-items: center; gap: 4px;
@@ -198,12 +110,9 @@ export default function HUD() {
         .hud-sb-name  { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .hud-sb-kills { font-weight: 700; color: #fff; flex-shrink: 0; }
 
-        /* ─────── PLAYER INFO — kiri, di atas joystick ─────── */
+        /* ─────── PLAYER INFO ─────── */
         .hud-player-info {
-          position: fixed;
-          bottom: 152px;
-          left: 14px;
-          z-index: 50;
+          position: fixed; bottom: 152px; left: 14px; z-index: 50;
           display: flex; flex-direction: column; gap: 5px;
           pointer-events: none;
         }
@@ -228,13 +137,9 @@ export default function HUD() {
         .hud-skill-cd   { font-size: 11px; color: #ff9800; font-weight: 700; }
         .hud-skill-ready { font-size: 11px; color: #4caf50; font-weight: 700; }
 
-        /* ─────── AMMO — pojok kanan atas scoreboard (atau tengah atas kiri) ─────── */
+        /* ─────── AMMO ─────── */
         .hud-ammo {
-          position: fixed;
-          /* Tempatkan di kiri bawah, tepat di atas player info */
-          bottom: 260px;
-          left: 14px;
-          z-index: 50;
+          position: fixed; bottom: 260px; left: 14px; z-index: 50;
           display: flex; flex-direction: column; align-items: flex-start;
           pointer-events: none;
         }
@@ -246,14 +151,118 @@ export default function HUD() {
         .hud-ammo-hint  { font-size: 10px; color: #ff9800; font-weight: 600; }
 
         /* ─────── CONTROLS ─────── */
-        .hud-controls-left  {
-          position: fixed; bottom: 18px; left: 18px; z-index: 50;
-        }
+        .hud-controls-left  { position: fixed; bottom: 18px; left: 18px; z-index: 50; }
         .hud-controls-right {
           position: fixed; bottom: 18px; right: 18px; z-index: 50;
           display: flex; flex-direction: column; gap: 6px; align-items: flex-end;
         }
       `}</style>
+
+      {/* ═══ TOP BAR ═══ */}
+      <div className="hud-top">
+        <div className="hud-score hud-score-a">
+          <span className="hud-score-kills">{teamAKills}</span>
+          <span className="hud-score-label">TIM A</span>
+        </div>
+
+        <div className="hud-center-top">
+          <span className="hud-timer">{formatTime(remaining)}</span>
+          <div className="hud-kill-info">
+            <span className="hud-kill-a">{teamAKills}</span>
+            <span className="hud-kill-sep"> / </span>
+            <span className="hud-kill-b">{teamBBotsDead}</span>
+            <span className="hud-kill-max"> (batas:{settings.killLimit})</span>
+          </div>
+        </div>
+
+        <div className="hud-score hud-score-b">
+          <span className="hud-score-label">TIM B</span>
+          <span className="hud-score-kills">{teamBBotsDead}</span>
+        </div>
+      </div>
+
+      {/* ═══ CROSSHAIR — tengah layar ═══ */}
+      <img className="hud-crosshair" src={CROSSHAIR} alt="" />
+
+      {/* ═══ SCOREBOARD ═══ */}
+      <div className="hud-scoreboard">
+        {[...teamA, ...teamB].map((p) => (
+          <div
+            key={p.id}
+            className={`hud-sb-row ${p.id === player.id ? "hud-sb-me" : ""} ${!p.isAlive ? "hud-sb-dead" : ""}`}
+          >
+            <span className={`hud-sb-team ${p.team === "A" ? "hud-sb-team-a" : "hud-sb-team-b"}`}>
+              {p.team}
+            </span>
+            <span className="hud-sb-name">{p.nickname}</span>
+            <span className="hud-sb-kills">{p.kills}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ═══ PLAYER INFO ═══ */}
+      <div className="hud-player-info">
+        <div className="hud-hp-section">
+          <div className="hud-hp-bar-wrap">
+            <div
+              className="hud-hp-bar-fill"
+              style={{
+                width: `${(player.hp / player.maxHp) * 100}%`,
+                background:
+                  player.hp > player.maxHp * 0.5
+                    ? "#4caf50"
+                    : player.hp > player.maxHp * 0.25
+                    ? "#ff9800"
+                    : "#f44336",
+              }}
+            />
+          </div>
+          <span className="hud-hp-text">{player.hp}</span>
+        </div>
+        <div className="hud-player-meta">
+          <span className="hud-hero-badge" style={{ background: heroColor[player.hero] }}>
+            {player.hero.toUpperCase()}
+          </span>
+          <span className="hud-nickname">{player.nickname}</span>
+        </div>
+        <div className="hud-skill-bar">
+          <span className="hud-skill-label">SKILL</span>
+          {player.skillCooldown > 0 ? (
+            <span className="hud-skill-cd">{Math.ceil(player.skillCooldown)}s</span>
+          ) : (
+            <span className="hud-skill-ready">SIAP</span>
+          )}
+        </div>
+      </div>
+
+      {/* ═══ AMMO ═══ */}
+      <div className="hud-ammo">
+        {player.weapon !== "unarmed" ? (
+          <>
+            <div className="hud-ammo-counts">
+              <span className="hud-ammo-cur">{player.ammo}</span>
+              <span className="hud-ammo-sep">/</span>
+              <span className="hud-ammo-max">{player.maxAmmo}</span>
+            </div>
+            <span className="hud-ammo-weapon">{WEAPONS[player.weapon].name}</span>
+          </>
+        ) : (
+          <span className="hud-ammo-hint">Crafting dulu!</span>
+        )}
+      </div>
+
+      {/* ═══ JOYSTICK ═══ */}
+      <div className="hud-controls-left">
+        <Joystick side="left" />
+      </div>
+
+      {/* ═══ TOMBOL AKSI ═══ */}
+      <div className="hud-controls-right">
+        <ActionButtons />
+      </div>
+
+      {/* ═══ BUILD MENU ═══ */}
+      {isBuildMenuOpen && <BuildMenu />}
     </>
   );
 }
