@@ -22,6 +22,32 @@ const WEAPON_SCALE: Record<string, number> = {
   grenade: 0.015,
 };
 
+const BASE = import.meta.env.BASE_URL ?? "/";
+
+const HERO_COLORS: Record<string, string> = {
+  medic: "#4caf50",
+  engineer: "#2196f3",
+  specter: "#9c27b0",
+  fighter: "#ff9800",
+};
+
+interface Props { player: PlayerState; }
+
+class GLBErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { fallback: ReactNode; children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
+
 function WeaponGLB({ weapon }: { weapon: string }) {
   const path = WEAPON_MODELS[weapon];
   const { scene } = useGLTF(BASE + path);
@@ -46,69 +72,16 @@ function WeaponGLB({ weapon }: { weapon: string }) {
   );
 }
 
-const BASE = import.meta.env.BASE_URL ?? "/";
-
-const HERO_COLORS: Record<string, string> = {
-  medic: "#4caf50",
-  engineer: "#2196f3",
-  specter: "#9c27b0",
-  fighter: "#ff9800",
-};
-
-interface Props { player: PlayerState; }
-
-/* ── Error Boundary agar GLB gagal tidak crash ── */
-class GLBErrorBoundary extends Component<
-  { fallback: ReactNode; children: ReactNode },
-  { hasError: boolean }
-> {
-  constructor(props: { fallback: ReactNode; children: ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() { return { hasError: true }; }
-  render() {
-    if (this.state.hasError) return this.props.fallback;
-    return this.props.children;
-  }
-}
-
-function SoldierGLB({ heroColor }: { heroColor: string }) {
-  const { scene } = useGLTF(BASE + "assets/characters/character-soldier.glb");
-  const cloned = useMemo(() => {
-    const c = scene.clone(true);
-    c.traverse((obj) => {
-      const mesh = obj as THREE.Mesh;
-      if (mesh.isMesh) {
-        mesh.castShadow = false;
-        if (mesh.material) {
-          const mat = (Array.isArray(mesh.material)
-            ? mesh.material[0]
-            : mesh.material) as THREE.MeshStandardMaterial;
-          const clonedMat = mat.clone();
-          clonedMat.color = new THREE.Color(heroColor);
-          clonedMat.roughness = 0.7;
-          clonedMat.metalness = 0.1;
-          mesh.material = clonedMat;
-        }
-      }
-    });
-    return c;
-  }, [scene, heroColor]);
-
-  return <primitive object={cloned} scale={1.0} position={[0, 0, 0]} />;
-}
-
 function WeaponMeshFallback({ weapon }: { weapon: string }) {
   const weaponColors: Record<string, string> = {
-    pistol: "#444",
-    rifle: "#333",
-    smg: "#3a3a3a",
-    sniper: "#2a2a2a",
-    rpg: "#556655",
-    grenade: "#667744",
+    pistol: "#555",
+    rifle: "#444",
+    smg: "#4a4a4a",
+    sniper: "#3a3a3a",
+    rpg: "#667766",
+    grenade: "#778855",
   };
-  const color = weaponColors[weapon] ?? "#333";
+  const color = weaponColors[weapon] ?? "#444";
   const isLong = weapon === "rifle" || weapon === "sniper" || weapon === "smg";
   const len = isLong ? 0.6 : 0.35;
   return (
@@ -147,7 +120,31 @@ function WeaponMesh({ weapon }: { weapon: string }) {
   );
 }
 
-function FallbackCharacter({
+// Crosshair 3D melayang di atas kepala karakter
+function HeadCrosshair() {
+  return (
+    <group position={[0, 2.6, 0]}>
+      {/* Garis horizontal */}
+      <mesh>
+        <boxGeometry args={[0.28, 0.025, 0.025]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.9} depthTest={false} />
+      </mesh>
+      {/* Garis vertikal */}
+      <mesh>
+        <boxGeometry args={[0.025, 0.28, 0.025]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.9} depthTest={false} />
+      </mesh>
+      {/* Titik tengah */}
+      <mesh>
+        <sphereGeometry args={[0.035, 6, 6]} />
+        <meshBasicMaterial color="#ff4444" transparent opacity={0.95} depthTest={false} />
+      </mesh>
+    </group>
+  );
+}
+
+// Karakter box (selalu tampil, tidak bergantung GLB)
+function BoxCharacter({
   heroColor,
   animTime,
   animState,
@@ -324,15 +321,6 @@ export default function PlayerCharacter({ player }: Props) {
     groupRef.current.rotation.y = player.rotation;
   });
 
-  const fallback = (
-    <FallbackCharacter
-      heroColor={heroColor}
-      animTime={animTime}
-      animState={player.animState}
-      player={player}
-    />
-  );
-
   return (
     <group ref={groupRef} position={[player.position.x, 0, player.position.z]}>
       {/* Bayangan blob */}
@@ -341,13 +329,16 @@ export default function PlayerCharacter({ player }: Props) {
         <meshBasicMaterial color="#000000" transparent opacity={0.35} />
       </mesh>
 
-      {/* GLB dengan ErrorBoundary – kalau gagal langsung pakai fallback */}
-      <GLBErrorBoundary fallback={fallback}>
-        <Suspense fallback={fallback}>
-          <SoldierGLB heroColor={heroColor} />
-          <WeaponMesh weapon={player.weapon} />
-        </Suspense>
-      </GLBErrorBoundary>
+      {/* Karakter box — selalu tampil, tidak bergantung GLB */}
+      <BoxCharacter
+        heroColor={heroColor}
+        animTime={animTime}
+        animState={player.animState}
+        player={player}
+      />
+
+      {/* Crosshair 3D melayang di atas kepala */}
+      <HeadCrosshair />
 
       {/* Scope ring */}
       {player.isScoping && (

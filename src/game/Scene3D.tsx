@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
-import { Stars } from "@react-three/drei";
+import { Sky } from "@react-three/drei";
 import ArenaMap from "./ArenaMap";
 import PlayerCharacter from "./PlayerCharacter";
 import BotCharacter from "./BotCharacter";
@@ -27,29 +27,33 @@ export default function Scene3D() {
           powerPreference: "high-performance",
           alpha: false,
         }}
-        camera={{ fov: 65, near: 0.1, far: 200 }}
-        style={{ background: "#0d1b2a" }}
+        camera={{ fov: 65, near: 0.1, far: 300 }}
       >
         <Suspense fallback={null}>
-          {/* Lighting — lebih terang agar karakter & lantai kelihatan */}
-          <ambientLight intensity={1.2} color="#c8d8e8" />
+          {/* Langit siang hari cerah */}
+          <Sky
+            distance={450}
+            sunPosition={[100, 40, 100]}
+            inclination={0.49}
+            azimuth={0.25}
+          />
+
+          {/* Pencahayaan lebih terang dan hangat */}
+          <ambientLight intensity={1.5} color="#d8e8f8" />
           <directionalLight
-            position={[15, 30, 15]}
-            intensity={2.0}
-            color="#ffffff"
+            position={[20, 40, 20]}
+            intensity={2.5}
+            color="#fff5e0"
           />
           <directionalLight
-            position={[-15, 20, -10]}
-            intensity={0.8}
-            color="#aabbd0"
+            position={[-15, 25, -10]}
+            intensity={1.0}
+            color="#c0d8f0"
           />
-          <hemisphereLight args={["#b0c8e8", "#3a5a3a", 0.6]} />
+          <hemisphereLight args={["#87ceeb", "#4a6a2a", 0.8]} />
 
-          {/* Stars di background */}
-          <Stars radius={80} depth={30} count={600} factor={3} fade />
-
-          {/* Fog lebih ringan agar tidak terlalu gelap */}
-          <fog attach="fog" args={["#0d1b2a", 80, 160]} />
+          {/* Fog lebih ringan supaya arena kelihatan cerah */}
+          <fog attach="fog" args={["#a8c8e8", 60, 180]} />
 
           {/* Map */}
           <ArenaMap />
@@ -59,7 +63,7 @@ export default function Scene3D() {
             <PlayerCharacter player={player} />
           )}
 
-          {/* Camera ikutin player */}
+          {/* Kamera ikutin player */}
           {player && <TPSCamera player={player} />}
 
           {/* Bots */}
@@ -67,7 +71,7 @@ export default function Scene3D() {
             <BotCharacter key={bot.id} bot={bot} />
           ))}
 
-          {/* Bullet Traces (bukan proyektil bola) */}
+          {/* Bullet Traces */}
           <ProjectileSystem projectiles={projectiles} />
 
           {/* Ground items */}

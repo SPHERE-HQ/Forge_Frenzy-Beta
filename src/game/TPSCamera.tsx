@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { PlayerState } from "../types/game";
+import { cameraState } from "./cameraState";
 
 const CAMERA_DISTANCE = 6;
 const CAMERA_HEIGHT = 3;
@@ -22,9 +23,9 @@ export default function TPSCamera({ player }: TPSCameraProps) {
   const targetPos = useRef(new THREE.Vector3());
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    // Use right half of screen for camera control
     for (let i = 0; i < e.changedTouches.length; i++) {
       const t = e.changedTouches[i];
+      // Sisi kanan layar (60% ke kanan) untuk kontrol kamera
       if (t.clientX > window.innerWidth * 0.4 && rightTouchIdRef.current === null) {
         rightTouchIdRef.current = t.identifier;
         lastTouchRef.current = { x: t.clientX, y: t.clientY };
@@ -108,6 +109,10 @@ export default function TPSCamera({ player }: TPSCameraProps) {
     camera.position.lerp(new THREE.Vector3(camX, camY, camZ), CAMERA_LAG + 0.05);
     targetPos.current.set(px, py + 0.5, pz);
     camera.lookAt(targetPos.current);
+
+    // Tulis yaw ke shared state supaya gameStore bisa pakai untuk
+    // camera-relative movement
+    cameraState.yaw = yawRef.current;
   });
 
   return null;

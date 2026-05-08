@@ -6,8 +6,7 @@ import ActionButtons from "./ActionButtons";
 import BuildMenu from "./BuildMenu";
 
 const BASE = import.meta.env.BASE_URL ?? "/";
-const CROSSHAIR = `${BASE}assets/ui/crosshairs/crosshair001.png`;
-const FONT_URL   = `${BASE}assets/fonts/KenneyFuture.ttf`;
+const FONT_URL = `${BASE}assets/fonts/KenneyFuture.ttf`;
 
 export default function HUD() {
   const player        = useGameStore((s) => s.player);
@@ -38,7 +37,6 @@ export default function HUD() {
           font-display: swap;
         }
 
-        /* ─────── GLOBAL ─────── */
         * { box-sizing: border-box; }
         .hud-top, .hud-timer, .hud-score-kills, .hud-ammo-cur,
         .hud-hp-text, .hud-hero-badge, .hud-sb-kills {
@@ -75,18 +73,6 @@ export default function HUD() {
         .hud-kill-sep  { color: #667; }
         .hud-kill-max  { color: #556; }
 
-        /* ─────── CROSSHAIR — tengah layar ─────── */
-        .hud-crosshair {
-          position: fixed;
-          top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
-          width: 40px; height: 40px;
-          z-index: 50;
-          pointer-events: none;
-          opacity: 0.85;
-          image-rendering: pixelated;
-        }
-
         /* ─────── SCOREBOARD ─────── */
         .hud-scoreboard {
           position: fixed; top: 60px; right: 8px; z-index: 50;
@@ -112,7 +98,7 @@ export default function HUD() {
 
         /* ─────── PLAYER INFO ─────── */
         .hud-player-info {
-          position: fixed; bottom: 152px; left: 14px; z-index: 50;
+          position: fixed; bottom: 170px; left: 14px; z-index: 50;
           display: flex; flex-direction: column; gap: 5px;
           pointer-events: none;
         }
@@ -139,7 +125,7 @@ export default function HUD() {
 
         /* ─────── AMMO ─────── */
         .hud-ammo {
-          position: fixed; bottom: 260px; left: 14px; z-index: 50;
+          position: fixed; bottom: 280px; left: 14px; z-index: 50;
           display: flex; flex-direction: column; align-items: flex-start;
           pointer-events: none;
         }
@@ -150,10 +136,18 @@ export default function HUD() {
         .hud-ammo-weapon { font-size: 10px; color: #aab; letter-spacing: 1px; margin-top: 1px; }
         .hud-ammo-hint  { font-size: 10px; color: #ff9800; font-weight: 600; }
 
-        /* ─────── CONTROLS ─────── */
-        .hud-controls-left  { position: fixed; bottom: 18px; left: 18px; z-index: 50; }
+        /* ─────── CONTROLS — joystick lebih masuk, tidak terlalu pojok ─────── */
+        .hud-controls-left  {
+          position: fixed;
+          bottom: 36px;
+          left: 36px;
+          z-index: 50;
+        }
         .hud-controls-right {
-          position: fixed; bottom: 18px; right: 18px; z-index: 50;
+          position: fixed;
+          bottom: 36px;
+          right: 36px;
+          z-index: 50;
           display: flex; flex-direction: column; gap: 6px; align-items: flex-end;
         }
       `}</style>
@@ -181,8 +175,7 @@ export default function HUD() {
         </div>
       </div>
 
-      {/* ═══ CROSSHAIR — tengah layar ═══ */}
-      <img className="hud-crosshair" src={CROSSHAIR} alt="" />
+      {/* Crosshair dihapus dari HUD — sudah ada di 3D di atas kepala karakter */}
 
       {/* ═══ SCOREBOARD ═══ */}
       <div className="hud-scoreboard">
@@ -251,7 +244,7 @@ export default function HUD() {
         )}
       </div>
 
-      {/* ═══ JOYSTICK ═══ */}
+      {/* ═══ JOYSTICK — bottom: 36px left: 36px (tidak terlalu pojok) ═══ */}
       <div className="hud-controls-left">
         <Joystick side="left" />
       </div>

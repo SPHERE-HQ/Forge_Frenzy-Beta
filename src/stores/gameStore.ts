@@ -11,6 +11,8 @@ import {
   WEAPONS, CRAFT_TIME_BASE, SKILL_COOLDOWN, SKILL_DURATION
 } from "../constants/game";
 import { generateId, randomArenaPosition, clamp } from "../utils/math";
+import { cameraState } from "../game/cameraState";
+import { checkCollision } from "../game/collisionData";
 
 interface GameStore {
   // Phase & meta
@@ -71,7 +73,7 @@ function createPlayer(nickname: string, hero: HeroType): PlayerState {
     maxHp: HERO_MAX_HP[hero],
     kills: 0,
     deaths: 0,
-    position: { x: 0, y: 0, z: 0 },
+    position: { x: -22, y: 0, z: 0 }, // spawn di zona tim A
     rotation: 0,
     weapon: "unarmed",
     ammo: -1,
@@ -298,18 +300,71 @@ export const useGameStore = create<GameStore>((set, get) => ({
   movePlayer: (dx, dz, sprint) => {
     const { player } = get();
     if (!player || !player.isAlive) return;
+
     const speed = sprint ? 5 * 1.7 : player.isCrouching ? 5 * 0.5 : 5;
-    const nx = player.position.x + dx * speed * 0.016;
-    const nz = player.position.z + dz * speed * 0.016;
+    const dt = 0.016;
+
+    // ── Camera-relative movement ──
+    // Joystick: dx = kanan, dz = bawah layar
+    // Camera forward (world XZ) = (sin(yaw), cos(yaw))
+    // Camera right  (world XZ) = (cos(yaw), -sin(yaw))
+    const yaw = cameraState.yaw;
+    const cosY = Math.cos(yaw);
+    const sinY = Math.sin(yaw);
+
+    // forward joystick = -dz (atas = maju)
+    // strafe joystick  = dx  (kanan = geser kanan)
+    const jFwd   = -dz;
+    const jRight =  dx;
+
+    const worldDx = jRight * cosY + jFwd * sinY;
+    const worldDz = jRight * (-sinY) + jFwd * cosY;
+
+    const nx = player.position.x + worldDx * speed * dt;
+    const nz = player.position.z + worldDz * speed * dt;
+
+    // Clamp ke batas arena
+    const cx = clamp(nx, -27.5, 27.5);
+    const cz = clamp(nz, -27.5, 27.5);
+
+    // ── Collision detection ──
+    // Coba gerak penuh dulu, kalau tabrakan coba axis tunggal
+    let finalX = player.position.x;
+    let finalZ = player.position.z;
+
+    if (!checkCollision(cx, cz)) {
+      // Bebas bergerak ke dua arah
+      finalX = cx;
+      finalZ = cz;
+    } else if (!checkCollision(cx, player.position.z)) {
+      // Hanya X yang bisa
+      finalX = cx;
+      finalZ = player.position.z;
+    } else if (!checkCollision(player.position.x, cz)) {
+      // Hanya Z yang bisa
+      finalX = player.position.x;
+      finalZ = cz;
+    }
+    // else: tidak bisa gerak sama sekali (sudut)
+
     const moving = Math.abs(dx) > 0.01 || Math.abs(dz) > 0.01;
+
+    // Rotasi karakter mengikuti arah camera + arah gerak joystick
+    let newRotation = player.rotation;
+    if (moving) {
+      // Arahkan karakter ke arah gerak di dunia
+      newRotation = Math.atan2(worldDx, worldDz);
+    }
+
     set({
       player: {
         ...player,
         position: {
-          x: clamp(nx, -28, 28),
+          x: finalX,
           y: player.position.y,
-          z: clamp(nz, -28, 28),
+          z: finalZ,
         },
+        rotation: newRotation,
         isSprinting: sprint && moving,
         animState: !moving ? "idle" : sprint ? "run" : "walk",
       }
@@ -332,7 +387,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const angle = player.rotation;
     const dir = { x: Math.sin(angle), y: 0, z: Math.cos(angle) };
 
-    /* Kecepatan sangat tinggi → bullet trace instan, bukan proyektil mengambang */
     const WEAPON_SPEED: Record<string, number> = {
       pistol:  180,
       rifle:   220,
@@ -458,7 +512,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const recipe = CRAFT_RECIPES.find(r => r.id === recipeId);
     if (!recipe) return;
 
-    // Check ingredients (engineer skips this)
     if (player.hero !== "engineer") {
       for (const [item, count] of Object.entries(recipe.ingredients)) {
         const have = player.inventory[item as keyof typeof player.inventory] ?? 0;
