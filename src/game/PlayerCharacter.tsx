@@ -2,6 +2,7 @@ import { useRef, Suspense, useMemo, Component, type ReactNode } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { SkeletonUtils } from "three/addons/utils/SkeletonUtils.js";
 import type { PlayerState } from "../types/game";
 
 const WEAPON_MODELS: Record<string, string> = {
@@ -143,7 +144,33 @@ function HeadCrosshair() {
   );
 }
 
-// Karakter box (selalu tampil, tidak bergantung GLB)
+// Karakter GLB soldier — pakai SkeletonUtils.clone agar skeleton tidak rusak
+function SoldierGLB({ heroColor }: { heroColor: string }) {
+  const { scene } = useGLTF(BASE + "assets/characters/character-soldier.glb");
+  const cloned = useMemo(() => {
+    // SkeletonUtils.clone merebind skeleton dengan benar (tidak seperti scene.clone(true))
+    const c = SkeletonUtils.clone(scene) as THREE.Group;
+    c.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.isMesh) {
+        mesh.castShadow = false;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        mesh.material = mats.map((mat) => {
+          const m = (mat as THREE.MeshStandardMaterial).clone();
+          m.color = new THREE.Color(heroColor);
+          m.roughness = 0.7;
+          m.metalness = 0.1;
+          return m;
+        });
+        if (!Array.isArray(mesh.material)) mesh.material = mesh.material;
+      }
+    });
+    return c;
+  }, [scene, heroColor]);
+  return <primitive object={cloned} scale={1.0} position={[0, 0, 0]} />;
+}
+
+// Karakter box (fallback jika GLB gagal dimuat)
 function BoxCharacter({
   heroColor,
   animTime,
@@ -329,13 +356,25 @@ export default function PlayerCharacter({ player }: Props) {
         <meshBasicMaterial color="#000000" transparent opacity={0.35} />
       </mesh>
 
-      {/* Karakter box — selalu tampil, tidak bergantung GLB */}
-      <BoxCharacter
-        heroColor={heroColor}
-        animTime={animTime}
-        animState={player.animState}
-        player={player}
-      />
+      {/* GLB soldier — fallback ke box karakter jika gagal */}
+      {(() => {
+        const fallback = (
+          <BoxCharacter
+            heroColor={heroColor}
+            animTime={animTime}
+            animState={player.animState}
+            player={player}
+          />
+        );
+        return (
+          <GLBErrorBoundary fallback={fallback}>
+            <Suspense fallback={fallback}>
+              <SoldierGLB heroColor={heroColor} />
+              <WeaponMesh weapon={player.weapon} />
+            </Suspense>
+          </GLBErrorBoundary>
+        );
+      })()}
 
       {/* Crosshair 3D melayang di atas kepala */}
       <HeadCrosshair />
