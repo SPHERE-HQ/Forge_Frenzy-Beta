@@ -2,7 +2,7 @@ import { useRef, Suspense, useMemo, Component, type ReactNode } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { SkeletonUtils } from "three/addons/utils/SkeletonUtils.js";
+import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { PlayerState } from "../types/game";
 
 const WEAPON_MODELS: Record<string, string> = {
@@ -149,7 +149,7 @@ function SoldierGLB({ heroColor }: { heroColor: string }) {
   const { scene } = useGLTF(BASE + "assets/characters/character-soldier.glb");
   const cloned = useMemo(() => {
     // SkeletonUtils.clone merebind skeleton dengan benar (tidak seperti scene.clone(true))
-    const c = SkeletonUtils.clone(scene) as THREE.Group;
+    const c = skeletonClone(scene) as THREE.Group;
     c.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (mesh.isMesh) {
