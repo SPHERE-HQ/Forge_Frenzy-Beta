@@ -4,6 +4,48 @@ import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { PlayerState } from "../types/game";
 
+const WEAPON_MODELS: Record<string, string> = {
+  pistol:  "assets/weapons/M1911_pistol.glb",
+  rifle:   "assets/weapons/M4A1.glb",
+  smg:     "assets/weapons/MP5.glb",
+  sniper:  "assets/weapons/SCAR.glb",
+  rpg:     "assets/weapons/RPG7.glb",
+  grenade: "assets/weapons/grenade.glb",
+};
+
+const WEAPON_SCALE: Record<string, number> = {
+  pistol:  0.012,
+  rifle:   0.012,
+  smg:     0.012,
+  sniper:  0.012,
+  rpg:     0.012,
+  grenade: 0.015,
+};
+
+function WeaponGLB({ weapon }: { weapon: string }) {
+  const path = WEAPON_MODELS[weapon];
+  const { scene } = useGLTF(BASE + path);
+  const cloned = useMemo(() => {
+    const c = scene.clone(true);
+    c.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.isMesh) {
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+      }
+    });
+    return c;
+  }, [scene]);
+  const scale = WEAPON_SCALE[weapon] ?? 0.012;
+  return (
+    <primitive
+      object={cloned}
+      scale={scale}
+      rotation={[0, Math.PI / 2, 0]}
+    />
+  );
+}
+
 const BASE = import.meta.env.BASE_URL ?? "/";
 
 const HERO_COLORS: Record<string, string> = {
@@ -57,9 +99,7 @@ function SoldierGLB({ heroColor }: { heroColor: string }) {
   return <primitive object={cloned} scale={1.0} position={[0, 0, 0]} />;
 }
 
-function WeaponMesh({ weapon }: { weapon: string }) {
-  if (weapon === "unarmed") return null;
-
+function WeaponMeshFallback({ weapon }: { weapon: string }) {
   const weaponColors: Record<string, string> = {
     pistol: "#444",
     rifle: "#333",
@@ -69,27 +109,40 @@ function WeaponMesh({ weapon }: { weapon: string }) {
     grenade: "#667744",
   };
   const color = weaponColors[weapon] ?? "#333";
-
   const isLong = weapon === "rifle" || weapon === "sniper" || weapon === "smg";
   const len = isLong ? 0.6 : 0.35;
-
   return (
-    <group position={[0.28, 0.9, -0.05]}>
-      {/* Grip */}
+    <>
       <mesh>
         <boxGeometry args={[0.06, 0.14, 0.1]} />
         <meshStandardMaterial color={color} metalness={0.6} roughness={0.3} />
       </mesh>
-      {/* Barrel */}
       <mesh position={[0, 0.03, -(len / 2 + 0.02)]}>
         <boxGeometry args={[0.05, 0.07, len]} />
         <meshStandardMaterial color={color} metalness={0.7} roughness={0.25} />
       </mesh>
-      {/* Muzzle highlight */}
       <mesh position={[0, 0.03, -(len + 0.06)]}>
         <cylinderGeometry args={[0.025, 0.025, 0.06, 6]} />
         <meshStandardMaterial color="#222" metalness={0.9} roughness={0.1} />
       </mesh>
+    </>
+  );
+}
+
+function WeaponMesh({ weapon }: { weapon: string }) {
+  if (weapon === "unarmed") return null;
+  const hasModel = weapon in WEAPON_MODELS;
+  return (
+    <group position={[0.28, 0.9, -0.05]}>
+      {hasModel ? (
+        <GLBErrorBoundary fallback={<WeaponMeshFallback weapon={weapon} />}>
+          <Suspense fallback={<WeaponMeshFallback weapon={weapon} />}>
+            <WeaponGLB weapon={weapon} />
+          </Suspense>
+        </GLBErrorBoundary>
+      ) : (
+        <WeaponMeshFallback weapon={weapon} />
+      )}
     </group>
   );
 }

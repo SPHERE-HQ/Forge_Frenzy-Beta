@@ -95,30 +95,55 @@ export default function Joystick({ side }: JoystickProps) {
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [movePlayer]);
 
+  const BASE = import.meta.env.BASE_URL ?? "/";
+
   return (
     <div className="joystick-wrap">
       <div ref={containerRef} className="joystick-base">
-        <div ref={knobRef} className="joystick-knob" />
+        <img
+          src={`${BASE}assets/ui/controls/joystick_pad.svg`}
+          className="joystick-pad-img"
+          draggable={false}
+          alt=""
+        />
+        <div ref={knobRef} className="joystick-knob">
+          <img
+            src={`${BASE}assets/ui/controls/joystick_knob.svg`}
+            className="joystick-knob-img"
+            draggable={false}
+            alt=""
+          />
+        </div>
       </div>
       <style>{`
         .joystick-wrap { display: flex; flex-direction: column; gap: 8px; }
         .joystick-base {
           width: 110px; height: 110px;
           border-radius: 50%;
-          background: rgba(255,255,255,0.08);
-          border: 2px solid rgba(255,255,255,0.2);
           display: flex; align-items: center; justify-content: center;
           position: relative;
           touch-action: none;
         }
+        .joystick-pad-img {
+          position: absolute;
+          width: 110px; height: 110px;
+          opacity: 0.75;
+          pointer-events: none;
+          user-select: none;
+        }
         .joystick-knob {
           width: ${KNOB_SIZE}px; height: ${KNOB_SIZE}px;
-          border-radius: 50%;
-          background: rgba(255,255,255,0.5);
-          border: 2px solid rgba(255,255,255,0.8);
+          display: flex; align-items: center; justify-content: center;
           pointer-events: none;
           will-change: transform;
           transition: transform 0.05s;
+          position: relative;
+          z-index: 1;
+        }
+        .joystick-knob-img {
+          width: ${KNOB_SIZE}px; height: ${KNOB_SIZE}px;
+          opacity: 0.9;
+          user-select: none;
         }
       `}</style>
     </div>
