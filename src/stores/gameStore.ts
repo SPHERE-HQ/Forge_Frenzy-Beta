@@ -332,13 +332,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const angle = player.rotation;
     const dir = { x: Math.sin(angle), y: 0, z: Math.cos(angle) };
 
+    /* Kecepatan sangat tinggi → bullet trace instan, bukan proyektil mengambang */
+    const WEAPON_SPEED: Record<string, number> = {
+      pistol:  180,
+      rifle:   220,
+      smg:     200,
+      sniper:  350,
+      rpg:     90,
+      grenade: 70,
+      unarmed: 100,
+    };
+
     const newProjectile: Projectile = {
       id: generateId(),
       ownerId: player.id,
       weapon: player.weapon,
-      position: { ...player.position, y: 1.2 },
+      position: { ...player.position, y: 1.1 },
       direction: dir,
-      speed: 30,
+      speed: WEAPON_SPEED[player.weapon] ?? 200,
       damage: weaponData.damage,
       range: weaponData.range,
       distanceTraveled: 0,

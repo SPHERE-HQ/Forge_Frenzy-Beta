@@ -21,31 +21,35 @@ export default function Scene3D() {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 0 }}>
       <Canvas
-        shadows
-        gl={{ antialias: true, powerPreference: "high-performance" }}
-        camera={{ fov: 70, near: 0.1, far: 300 }}
-        style={{ background: "#1a1a2e" }}
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: false,
+          powerPreference: "high-performance",
+          alpha: false,
+        }}
+        camera={{ fov: 65, near: 0.1, far: 200 }}
+        style={{ background: "#0d1b2a" }}
       >
         <Suspense fallback={null}>
-          {/* Lighting */}
-          <ambientLight intensity={0.4} />
+          {/* Lighting — lebih terang agar karakter & lantai kelihatan */}
+          <ambientLight intensity={1.2} color="#c8d8e8" />
           <directionalLight
-            position={[20, 40, 20]}
-            intensity={1.2}
-            castShadow
-            shadow-mapSize={[2048, 2048]}
-            shadow-camera-left={-50}
-            shadow-camera-right={50}
-            shadow-camera-top={50}
-            shadow-camera-bottom={-50}
+            position={[15, 30, 15]}
+            intensity={2.0}
+            color="#ffffff"
           />
-          <hemisphereLight args={["#b0c4de", "#5a4a3a", 0.3]} />
+          <directionalLight
+            position={[-15, 20, -10]}
+            intensity={0.8}
+            color="#aabbd0"
+          />
+          <hemisphereLight args={["#b0c8e8", "#3a5a3a", 0.6]} />
 
-          {/* Stars in background */}
-          <Stars radius={100} depth={50} count={1000} factor={2} fade />
+          {/* Stars di background */}
+          <Stars radius={80} depth={30} count={600} factor={3} fade />
 
-          {/* Fog */}
-          <fog attach="fog" args={["#1a1a2e", 60, 120]} />
+          {/* Fog lebih ringan agar tidak terlalu gelap */}
+          <fog attach="fog" args={["#0d1b2a", 80, 160]} />
 
           {/* Map */}
           <ArenaMap />
@@ -55,7 +59,7 @@ export default function Scene3D() {
             <PlayerCharacter player={player} />
           )}
 
-          {/* Camera follows player */}
+          {/* Camera ikutin player */}
           {player && <TPSCamera player={player} />}
 
           {/* Bots */}
@@ -63,7 +67,7 @@ export default function Scene3D() {
             <BotCharacter key={bot.id} bot={bot} />
           ))}
 
-          {/* Projectiles */}
+          {/* Bullet Traces (bukan proyektil bola) */}
           <ProjectileSystem projectiles={projectiles} />
 
           {/* Ground items */}
@@ -76,7 +80,6 @@ export default function Scene3D() {
         </Suspense>
       </Canvas>
 
-      {/* Audio manager - outside Canvas */}
       <AudioManager />
     </div>
   );

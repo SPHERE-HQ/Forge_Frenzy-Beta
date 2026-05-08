@@ -1,26 +1,91 @@
 import { useGLTF } from "@react-three/drei";
-import { Suspense, useMemo, type ReactElement } from "react";
+import { Suspense, useMemo, type ReactElement, Component, type ReactNode } from "react";
 import * as THREE from "three";
 
 const BASE = import.meta.env.BASE_URL ?? "/";
 
-function ArenaGLB({ path, position, rotation, scale }: {
+/* ── Error boundary agar GLB rusak tidak crash ── */
+class GLBErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { fallback: ReactNode; children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
+
+/* ── Warna material batu/arena ── */
+const STONE_COLOR = "#8a7f72";
+const STONE_DARK  = "#6a6058";
+const WOOD_COLOR  = "#7a6040";
+const METAL_COLOR = "#607080";
+
+function fixMaterials(node: THREE.Object3D) {
+  node.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+
+    const applyFix = (mat: THREE.Material) => {
+      const m = mat as THREE.MeshStandardMaterial;
+      if (!m.color) return;
+      const { r, g, b } = m.color;
+      const isWhiteOrDefault = r > 0.88 && g > 0.88 && b > 0.88;
+      const isBlack = r < 0.05 && g < 0.05 && b < 0.05;
+      if (isWhiteOrDefault || isBlack) {
+        m.color.set(STONE_COLOR);
+        m.roughness = 0.92;
+        m.metalness = 0.0;
+        if (m.map) m.map = null;
+      }
+    };
+
+    if (Array.isArray(mesh.material)) {
+      mesh.material.forEach(applyFix);
+    } else {
+      applyFix(mesh.material);
+    }
+  });
+}
+
+function ArenaGLB({
+  path,
+  position,
+  rotation,
+  scale,
+  colorOverride,
+}: {
   path: string;
   position: [number, number, number];
   rotation?: [number, number, number];
   scale?: number | [number, number, number];
+  colorOverride?: string;
 }) {
   const { scene } = useGLTF(BASE + path);
   const cloned = useMemo(() => {
     const c = scene.clone(true);
-    c.traverse((obj) => {
-      if ((obj as THREE.Mesh).isMesh) {
-        obj.castShadow = true;
-        obj.receiveShadow = true;
-      }
-    });
+    fixMaterials(c);
+    if (colorOverride) {
+      c.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        const applyColor = (mat: THREE.Material) => {
+          const m = mat as THREE.MeshStandardMaterial;
+          if (m.color) m.color.set(colorOverride);
+        };
+        if (Array.isArray(mesh.material)) mesh.material.forEach(applyColor);
+        else applyColor(mesh.material);
+      });
+    }
     return c;
-  }, [scene]);
+  }, [scene, colorOverride]);
 
   return (
     <primitive
@@ -32,27 +97,37 @@ function ArenaGLB({ path, position, rotation, scale }: {
   );
 }
 
+/* ── Lantai lebih terang ── */
 function Floor() {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-      <planeGeometry args={[80, 80]} />
-      <meshStandardMaterial color="#1e2a30" roughness={0.9} metalness={0.1} />
-    </mesh>
+    <>
+      {/* Lantai utama */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow={false}>
+        <planeGeometry args={[80, 80]} />
+        <meshStandardMaterial color="#3a4a38" roughness={0.95} metalness={0.0} />
+      </mesh>
+      {/* Platform area tengah — sedikit lebih cerah */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
+        <planeGeometry args={[60, 60]} />
+        <meshStandardMaterial color="#445544" roughness={0.95} metalness={0.0} />
+      </mesh>
+    </>
   );
 }
 
+/* ── Grid lines ringan ── */
 function GridLines() {
   const grid = useMemo(() => {
     const lines: ReactElement[] = [];
-    for (let i = -40; i <= 40; i += 5) {
+    for (let i = -30; i <= 30; i += 8) {
       lines.push(
         <mesh key={`h${i}`} position={[i, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.05, 80]} />
-          <meshBasicMaterial color="#2a3a40" transparent opacity={0.3} />
+          <planeGeometry args={[0.04, 60]} />
+          <meshBasicMaterial color="#556655" transparent opacity={0.25} />
         </mesh>,
         <mesh key={`v${i}`} position={[0, 0.01, i]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[80, 0.05]} />
-          <meshBasicMaterial color="#2a3a40" transparent opacity={0.3} />
+          <planeGeometry args={[60, 0.04]} />
+          <meshBasicMaterial color="#556655" transparent opacity={0.25} />
         </mesh>
       );
     }
@@ -61,31 +136,52 @@ function GridLines() {
   return <>{grid}</>;
 }
 
-// Fallback geometry obstacles (used if GLB fails)
+/* ── Fallback obstacles pakai box geometry ── */
 const OBSTACLES = [
-  { pos: [0, 1, -28] as [number,number,number], size: [40, 2, 1] as [number,number,number], color: "#5a7a8a" },
-  { pos: [0, 1,  28] as [number,number,number], size: [40, 2, 1] as [number,number,number], color: "#5a7a8a" },
-  { pos: [-28, 1, 0] as [number,number,number], size: [1, 2, 56] as [number,number,number], color: "#5a7a8a" },
-  { pos: [ 28, 1, 0] as [number,number,number], size: [1, 2, 56] as [number,number,number], color: "#5a7a8a" },
-  { pos: [0, 0.75, 0],   size: [4, 1.5, 4],   color: "#3a4a5a" },
-  { pos: [10, 0.75, 10], size: [3, 1.5, 3],   color: "#4a5a6a" },
-  { pos: [-10, 0.75, 10],size: [3, 1.5, 3],   color: "#4a5a6a" },
-  { pos: [10, 0.75, -10],size: [3, 1.5, 3],   color: "#4a5a6a" },
-  { pos: [-10, 0.75,-10],size: [3, 1.5, 3],   color: "#4a5a6a" },
-  { pos: [0, 0.75, 12],  size: [8, 1.5, 1],   color: "#3a5a4a" },
-  { pos: [0, 0.75, -12], size: [8, 1.5, 1],   color: "#3a5a4a" },
-  { pos: [15, 0.75, 0],  size: [1, 1.5, 12],  color: "#3a5a4a" },
-  { pos: [-15, 0.75, 0], size: [1, 1.5, 12],  color: "#3a5a4a" },
+  /* border luar */
+  { pos: [0, 1, -29] as [number,number,number], size: [58, 2, 1] as [number,number,number], color: STONE_COLOR },
+  { pos: [0, 1,  29] as [number,number,number], size: [58, 2, 1] as [number,number,number], color: STONE_COLOR },
+  { pos: [-29, 1, 0] as [number,number,number], size: [1, 2, 58] as [number,number,number], color: STONE_COLOR },
+  { pos: [ 29, 1, 0] as [number,number,number], size: [1, 2, 58] as [number,number,number], color: STONE_COLOR },
+  /* cover tengah */
+  { pos: [0, 0.75, 0],    size: [4,   1.5, 4],   color: STONE_DARK },
+  { pos: [10, 0.75, 10],  size: [3,   1.5, 3],   color: STONE_COLOR },
+  { pos: [-10, 0.75, 10], size: [3,   1.5, 3],   color: STONE_COLOR },
+  { pos: [10, 0.75, -10], size: [3,   1.5, 3],   color: STONE_COLOR },
+  { pos: [-10, 0.75,-10], size: [3,   1.5, 3],   color: STONE_COLOR },
+  { pos: [0, 0.75, 12],   size: [8,   1.5, 1],   color: WOOD_COLOR },
+  { pos: [0, 0.75, -12],  size: [8,   1.5, 1],   color: WOOD_COLOR },
+  { pos: [15, 0.75, 0],   size: [1,   1.5, 12],  color: WOOD_COLOR },
+  { pos: [-15, 0.75, 0],  size: [1,   1.5, 12],  color: WOOD_COLOR },
+  /* box tambahan */
+  { pos: [7, 0.6, 0],     size: [2.5, 1.2, 2.5], color: METAL_COLOR },
+  { pos: [-7, 0.6, 0],    size: [2.5, 1.2, 2.5], color: METAL_COLOR },
 ];
 
-// Arena GLB layout
-const ARENA_WALLS = [
-  // Outer walls (border-straight)
+function FallbackObstacles() {
+  return (
+    <>
+      {OBSTACLES.map((obs, i) => (
+        <mesh key={i} position={obs.pos as [number,number,number]}>
+          <boxGeometry args={obs.size as [number,number,number]} />
+          <meshStandardMaterial color={obs.color} roughness={0.85} metalness={0.05} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+/* ── Layout GLB yang ada di public/assets/environment/arena/ ── */
+/* File yang tersedia: border-straight.glb, border-corner.glb, column.glb,   */
+/* block.glb, stairs.glb, tree.glb, statue.glb, banner.glb, trophy.glb,       */
+/* weapon-rack.glb, bricks.glb, floor-detail.glb, wall-gate.glb               */
+
+const BORDER_STRAIGHTS = [
   { pos: [-14, 0, -28] as [number,number,number], rot: [0, 0, 0] as [number,number,number] },
-  { pos: [ 0,  0, -28] as [number,number,number], rot: [0, 0, 0] as [number,number,number] },
+  { pos: [  0, 0, -28] as [number,number,number], rot: [0, 0, 0] as [number,number,number] },
   { pos: [ 14, 0, -28] as [number,number,number], rot: [0, 0, 0] as [number,number,number] },
   { pos: [-14, 0,  28] as [number,number,number], rot: [0, Math.PI, 0] as [number,number,number] },
-  { pos: [ 0,  0,  28] as [number,number,number], rot: [0, Math.PI, 0] as [number,number,number] },
+  { pos: [  0, 0,  28] as [number,number,number], rot: [0, Math.PI, 0] as [number,number,number] },
   { pos: [ 14, 0,  28] as [number,number,number], rot: [0, Math.PI, 0] as [number,number,number] },
   { pos: [-28, 0, -14] as [number,number,number], rot: [0, -Math.PI/2, 0] as [number,number,number] },
   { pos: [-28, 0,   0] as [number,number,number], rot: [0, -Math.PI/2, 0] as [number,number,number] },
@@ -95,14 +191,14 @@ const ARENA_WALLS = [
   { pos: [ 28, 0,  14] as [number,number,number], rot: [0,  Math.PI/2, 0] as [number,number,number] },
 ];
 
-const ARENA_CORNERS = [
+const BORDER_CORNERS = [
   { pos: [-28, 0, -28] as [number,number,number], rot: [0, 0, 0] as [number,number,number] },
   { pos: [ 28, 0, -28] as [number,number,number], rot: [0, Math.PI/2, 0] as [number,number,number] },
   { pos: [-28, 0,  28] as [number,number,number], rot: [0, -Math.PI/2, 0] as [number,number,number] },
   { pos: [ 28, 0,  28] as [number,number,number], rot: [0, Math.PI, 0] as [number,number,number] },
 ];
 
-const ARENA_COLUMNS = [
+const COLUMNS = [
   { pos: [0, 0, 0] as [number,number,number] },
   { pos: [10, 0, 0] as [number,number,number] },
   { pos: [-10, 0, 0] as [number,number,number] },
@@ -110,118 +206,150 @@ const ARENA_COLUMNS = [
   { pos: [0, 0, -10] as [number,number,number] },
 ];
 
-const ARENA_BLOCKS = [
+const BLOCKS = [
   { pos: [10, 0, 10] as [number,number,number] },
   { pos: [-10, 0, 10] as [number,number,number] },
   { pos: [10, 0, -10] as [number,number,number] },
   { pos: [-10, 0, -10] as [number,number,number] },
 ];
 
-const ARENA_TREES = [
+const STAIRS_LIST = [
+  { pos: [-20, 0, 0] as [number,number,number], rot: [0, Math.PI/2, 0] as [number,number,number] },
+  { pos: [ 20, 0, 0] as [number,number,number], rot: [0, -Math.PI/2, 0] as [number,number,number] },
+];
+
+const TREES = [
   { pos: [20, 0, 15] as [number,number,number] },
   { pos: [-20, 0, -15] as [number,number,number] },
   { pos: [20, 0, -18] as [number,number,number] },
   { pos: [-22, 0, 16] as [number,number,number] },
 ];
 
-const ARENA_STAIRS = [
-  { pos: [-20, 0, 0] as [number,number,number], rot: [0, Math.PI/2, 0] as [number,number,number] },
-  { pos: [ 20, 0, 0] as [number,number,number], rot: [0, -Math.PI/2, 0] as [number,number,number] },
-];
+/* Wrapper GLB individual dengan error boundary sendiri */
+function SafeGLB(props: {
+  path: string;
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  scale?: number | [number, number, number];
+  colorOverride?: string;
+  fallback?: ReactNode;
+}) {
+  const fb = props.fallback ?? null;
+  return (
+    <GLBErrorBoundary fallback={fb}>
+      <Suspense fallback={fb}>
+        <ArenaGLB
+          path={props.path}
+          position={props.position}
+          rotation={props.rotation}
+          scale={props.scale}
+          colorOverride={props.colorOverride}
+        />
+      </Suspense>
+    </GLBErrorBoundary>
+  );
+}
 
 function ArenaScene() {
   return (
     <group>
-      {/* Outer walls */}
-      {ARENA_WALLS.map((w, i) => (
-        <ArenaGLB
-          key={`wall-${i}`}
-          path="assets/environment/arena/wall.glb"
+      {/* Border luar — pakai border-straight.glb */}
+      {BORDER_STRAIGHTS.map((w, i) => (
+        <SafeGLB
+          key={`bs-${i}`}
+          path="assets/environment/arena/border-straight.glb"
           position={w.pos}
           rotation={w.rot}
           scale={2}
+          colorOverride={STONE_COLOR}
         />
       ))}
 
-      {/* Corners */}
-      {ARENA_CORNERS.map((c, i) => (
-        <ArenaGLB
-          key={`corner-${i}`}
-          path="assets/environment/arena/wall-corner.glb"
+      {/* Sudut — border-corner.glb */}
+      {BORDER_CORNERS.map((c, i) => (
+        <SafeGLB
+          key={`bc-${i}`}
+          path="assets/environment/arena/border-corner.glb"
           position={c.pos}
           rotation={c.rot}
           scale={2}
+          colorOverride={STONE_COLOR}
         />
       ))}
 
-      {/* Columns */}
-      {ARENA_COLUMNS.map((c, i) => (
-        <ArenaGLB
+      {/* Kolom tengah */}
+      {COLUMNS.map((c, i) => (
+        <SafeGLB
           key={`col-${i}`}
           path="assets/environment/arena/column.glb"
           position={c.pos}
           scale={1.5}
+          colorOverride={STONE_DARK}
         />
       ))}
 
-      {/* Cover blocks */}
-      {ARENA_BLOCKS.map((b, i) => (
-        <ArenaGLB
-          key={`block-${i}`}
+      {/* Cover block */}
+      {BLOCKS.map((b, i) => (
+        <SafeGLB
+          key={`blk-${i}`}
           path="assets/environment/arena/block.glb"
           position={b.pos}
           scale={2}
+          colorOverride={STONE_COLOR}
         />
       ))}
 
-      {/* Stairs */}
-      {ARENA_STAIRS.map((s, i) => (
-        <ArenaGLB
-          key={`stairs-${i}`}
+      {/* Tangga */}
+      {STAIRS_LIST.map((s, i) => (
+        <SafeGLB
+          key={`st-${i}`}
           path="assets/environment/arena/stairs.glb"
           position={s.pos}
           rotation={s.rot}
           scale={2}
+          colorOverride={STONE_DARK}
         />
       ))}
 
-      {/* Trees */}
-      {ARENA_TREES.map((t, i) => (
-        <ArenaGLB
-          key={`tree-${i}`}
+      {/* Pohon */}
+      {TREES.map((t, i) => (
+        <SafeGLB
+          key={`tr-${i}`}
           path="assets/environment/arena/tree.glb"
           position={t.pos}
           scale={2}
+          colorOverride="#4a7a3a"
         />
       ))}
 
-      {/* Center statue */}
-      <ArenaGLB
+      {/* Patung tengah */}
+      <SafeGLB
         path="assets/environment/arena/statue.glb"
         position={[0, 0, 0]}
         scale={2}
+        colorOverride={STONE_DARK}
       />
 
-      {/* Banners */}
-      <ArenaGLB path="assets/environment/arena/banner.glb" position={[-26, 0, -26]} scale={2} />
-      <ArenaGLB path="assets/environment/arena/banner.glb" position={[26, 0, 26]} scale={2} rotation={[0, Math.PI, 0]} />
+      {/* Banner */}
+      <SafeGLB path="assets/environment/arena/banner.glb" position={[-26, 0, -26]} scale={2} colorOverride="#8a3a2a" />
+      <SafeGLB path="assets/environment/arena/banner.glb" position={[26, 0, 26]} scale={2} rotation={[0, Math.PI, 0]} colorOverride="#2a3a8a" />
 
       {/* Trophy */}
-      <ArenaGLB path="assets/environment/arena/trophy.glb" position={[-22, 0, 0]} scale={1.5} />
-      <ArenaGLB path="assets/environment/arena/trophy.glb" position={[22, 0, 0]} scale={1.5} />
+      <SafeGLB path="assets/environment/arena/trophy.glb" position={[-22, 0, 0]} scale={1.5} colorOverride="#c8a020" />
+      <SafeGLB path="assets/environment/arena/trophy.glb" position={[22, 0, 0]} scale={1.5} colorOverride="#c8a020" />
 
-      {/* Weapon racks */}
-      <ArenaGLB path="assets/environment/arena/weapon-rack.glb" position={[-20, 0, 5]} scale={1.5} />
-      <ArenaGLB path="assets/environment/arena/weapon-rack.glb" position={[20, 0, -5]} scale={1.5} />
+      {/* Rak senjata */}
+      <SafeGLB path="assets/environment/arena/weapon-rack.glb" position={[-20, 0, 5]} scale={1.5} colorOverride={METAL_COLOR} />
+      <SafeGLB path="assets/environment/arena/weapon-rack.glb" position={[20, 0, -5]} scale={1.5} colorOverride={METAL_COLOR} />
 
-      {/* Bricks / floor detail */}
-      <ArenaGLB path="assets/environment/arena/bricks.glb" position={[5, 0, 5]} scale={2} />
-      <ArenaGLB path="assets/environment/arena/bricks.glb" position={[-5, 0, -5]} scale={2} />
-      <ArenaGLB path="assets/environment/arena/floor-detail.glb" position={[0, 0.01, 0]} scale={3} />
+      {/* Bricks / detail lantai */}
+      <SafeGLB path="assets/environment/arena/bricks.glb" position={[5, 0, 5]} scale={2} colorOverride={STONE_COLOR} />
+      <SafeGLB path="assets/environment/arena/bricks.glb" position={[-5, 0, -5]} scale={2} colorOverride={STONE_COLOR} />
+      <SafeGLB path="assets/environment/arena/floor-detail.glb" position={[0, 0.01, 0]} scale={3} colorOverride={STONE_DARK} />
 
-      {/* Wall gate (spawn side) */}
-      <ArenaGLB path="assets/environment/arena/wall-gate.glb" position={[-28, 0, 0]} rotation={[0, Math.PI/2, 0]} scale={2} />
-      <ArenaGLB path="assets/environment/arena/wall-gate.glb" position={[28, 0, 0]} rotation={[0, -Math.PI/2, 0]} scale={2} />
+      {/* Gate */}
+      <SafeGLB path="assets/environment/arena/wall-gate.glb" position={[-28, 0, 0]} rotation={[0, Math.PI/2, 0]} scale={2} colorOverride={STONE_COLOR} />
+      <SafeGLB path="assets/environment/arena/wall-gate.glb" position={[28, 0, 0]} rotation={[0, -Math.PI/2, 0]} scale={2} colorOverride={STONE_COLOR} />
     </group>
   );
 }
@@ -232,30 +360,23 @@ export default function ArenaMap() {
       <Floor />
       <GridLines />
 
-      {/* Try real GLB arena, fallback to boxes */}
-      <Suspense fallback={
-        <>
-          {OBSTACLES.map((obs, i) => (
-            <mesh key={i} position={obs.pos as [number,number,number]} castShadow receiveShadow>
-              <boxGeometry args={obs.size as [number,number,number]} />
-              <meshStandardMaterial color={obs.color} roughness={0.7} metalness={0.15} />
-            </mesh>
-          ))}
-        </>
-      }>
-        <ArenaScene />
-      </Suspense>
+      {/* Scene arena — pakai GLB, kalau gagal total fallback ke boxes */}
+      <GLBErrorBoundary fallback={<FallbackObstacles />}>
+        <Suspense fallback={<FallbackObstacles />}>
+          <ArenaScene />
+        </Suspense>
+      </GLBErrorBoundary>
 
-      {/* Team A spawn zone */}
-      <mesh position={[-22, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Zona spawn Tim A */}
+      <mesh position={[-22, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[5, 32]} />
-        <meshBasicMaterial color="#4fc3f7" transparent opacity={0.12} />
+        <meshBasicMaterial color="#4fc3f7" transparent opacity={0.1} />
       </mesh>
 
-      {/* Team B spawn zone */}
-      <mesh position={[22, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Zona spawn Tim B */}
+      <mesh position={[22, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[5, 32]} />
-        <meshBasicMaterial color="#ff6b35" transparent opacity={0.12} />
+        <meshBasicMaterial color="#ff6b35" transparent opacity={0.1} />
       </mesh>
     </group>
   );
