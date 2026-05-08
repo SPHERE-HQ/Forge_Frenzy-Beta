@@ -32,6 +32,17 @@ const HERO_COLORS: Record<string, string> = {
   fighter: "#ff9800",
 };
 
+// Konfigurasi model per hero: path, scale, dan offset Y agar kaki tepat di lantai
+// Scale & posY dihitung dari bounding box tiap GLB:
+//   - pirate/robot/swat: Y range -1..1 (2m) → scale 0.9, posY 0.9
+//   - heavy: Y range -22.5..187 (satuan cm) → scale 0.01, posY 0.225
+const HERO_MODEL_CONFIG: Record<string, { path: string; scale: number; posY: number }> = {
+  medic:    { path: "assets/characters/swat.glb",   scale: 0.9,  posY: 0.9   },
+  engineer: { path: "assets/characters/robot.glb",  scale: 0.9,  posY: 0.9   },
+  specter:  { path: "assets/characters/pirate.glb", scale: 0.9,  posY: 0.9   },
+  fighter:  { path: "assets/characters/heavy.glb",  scale: 0.01, posY: 0.225 },
+};
+
 interface Props { player: PlayerState; }
 
 class GLBErrorBoundary extends Component<
@@ -144,31 +155,28 @@ function HeadCrosshair() {
   );
 }
 
-// Karakter GLB soldier — pakai SkeletonUtils.clone agar skeleton tidak rusak
-function SoldierGLB({ heroColor }: { heroColor: string }) {
-  const { scene } = useGLTF(BASE + "assets/characters/character-soldier.glb");
+// Karakter GLB per hero — skeletonClone agar skeleton tidak rusak (skinned maupun tidak)
+function HeroGLB({ hero, heroColor }: { hero: string; heroColor: string }) {
+  const cfg = HERO_MODEL_CONFIG[hero] ?? HERO_MODEL_CONFIG.fighter;
+  const { scene } = useGLTF(BASE + cfg.path);
   const cloned = useMemo(() => {
-    // SkeletonUtils.clone merebind skeleton dengan benar (tidak seperti scene.clone(true))
     const c = skeletonClone(scene) as THREE.Group;
     c.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (mesh.isMesh) {
         mesh.castShadow = false;
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        mesh.material = mats.map((mat) => {
-          const m = (mat as THREE.MeshStandardMaterial).clone();
-          m.color = new THREE.Color(heroColor);
-          m.roughness = 0.7;
-          m.metalness = 0.1;
-          return m;
-        });
-        if (!Array.isArray(mesh.material)) mesh.material = mesh.material;
+        // Tidak ubah warna agar tekstur asli model tetap terlihat
       }
     });
     return c;
-  }, [scene, heroColor]);
-  return <primitive object={cloned} scale={1.0} position={[0, 0, 0]} />;
+  }, [scene]);
+  return <primitive object={cloned} scale={cfg.scale} position={[0, cfg.posY, 0]} />;
 }
+
+// Preload semua model agar tidak ada delay saat hero dipilih
+Object.values(HERO_MODEL_CONFIG).forEach(cfg => {
+  useGLTF.preload(BASE + cfg.path);
+});
 
 // Karakter box (fallback jika GLB gagal dimuat)
 function BoxCharacter({
@@ -356,7 +364,7 @@ export default function PlayerCharacter({ player }: Props) {
         <meshBasicMaterial color="#000000" transparent opacity={0.35} />
       </mesh>
 
-      {/* GLB soldier — fallback ke box karakter jika gagal */}
+      {/* GLB per hero — fallback ke box karakter jika gagal */}
       {(() => {
         const fallback = (
           <BoxCharacter
@@ -369,7 +377,7 @@ export default function PlayerCharacter({ player }: Props) {
         return (
           <GLBErrorBoundary fallback={fallback}>
             <Suspense fallback={fallback}>
-              <SoldierGLB heroColor={heroColor} />
+              <HeroGLB hero={player.hero} heroColor={heroColor} />
               <WeaponMesh weapon={player.weapon} />
             </Suspense>
           </GLBErrorBoundary>
