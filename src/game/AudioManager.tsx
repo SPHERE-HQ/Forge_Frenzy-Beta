@@ -86,7 +86,7 @@ export default function AudioManager() {
     if (phase === "playing" && prev !== "playing") {
       playSound("countdown", 0.5);
     }
-    if (phase === "gameover") {
+    if (phase === "game_over") {
       playBGM("defeat", 0.5);
     }
   }, [phase]);
