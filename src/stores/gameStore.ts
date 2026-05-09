@@ -73,7 +73,7 @@ function createPlayer(nickname: string, hero: HeroType): PlayerState {
     maxHp: HERO_MAX_HP[hero],
     kills: 0,
     deaths: 0,
-    position: { x: -22, y: 0, z: 0 }, // spawn di zona tim A
+    position: { x: -25, y: 0, z: -8 }, // spawn di zona tim A (bebas obstacle)
     rotation: 0,
     weapon: "unarmed",
     ammo: -1,

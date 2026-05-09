@@ -80,7 +80,7 @@ export default function PreGameScreen() {
         <h1 className="pre-title">
           {step === "settings" ? "⚙ Pengaturan Match" : "⚔ Pilih Hero"}
         </h1>
-        <div style={{ width: 80 }} />
+        <div style={{ width: 60 }} />
       </div>
 
       <div className="pre-content">
@@ -213,37 +213,36 @@ export default function PreGameScreen() {
         .pre-header {
           position: relative; z-index: 1;
           display: flex; align-items: center; justify-content: space-between;
-          padding: 16px 24px;
+          padding: clamp(10px,1.5vh,16px) clamp(14px,3vw,24px);
           border-bottom: 1px solid rgba(255,255,255,0.06);
+          flex-shrink: 0;
         }
         .pre-back {
           background: none; border: none; color: #778899;
-          font-size: 14px; cursor: pointer; padding: 8px;
+          font-size: clamp(12px,1.8vw,14px); cursor: pointer; padding: 6px;
+          -webkit-tap-highlight-color: transparent;
         }
-        .pre-back:hover { color: #fff; }
+        .pre-back:active { color: #fff; }
         .pre-title {
-          font-size: 18px; font-weight: 700; color: #fff;
+          font-size: clamp(13px,2.2vw,18px); font-weight: 700; color: #fff;
           letter-spacing: 2px; margin: 0;
         }
         .pre-content {
           position: relative; z-index: 1;
           flex: 1; display: flex; justify-content: center;
-          padding: 30px 20px;
+          padding: clamp(14px,2.5vh,30px) clamp(12px,2.5vw,20px);
+          min-height: 0;
         }
         .settings-panel {
           width: min(500px, 100%);
-          display: flex; flex-direction: column; gap: 24px;
+          display: flex; flex-direction: column; gap: clamp(14px,2.5vh,24px);
         }
-        .setting-row {
-          display: flex; flex-direction: column; gap: 10px;
-        }
+        .setting-row { display: flex; flex-direction: column; gap: 8px; }
         .setting-label {
-          font-size: 13px; font-weight: 600; color: #aabbcc;
+          font-size: clamp(11px,1.7vw,13px); font-weight: 600; color: #aabbcc;
           letter-spacing: 2px; text-transform: uppercase;
         }
-        .setting-control {
-          display: flex; align-items: center; gap: 16px;
-        }
+        .setting-control { display: flex; align-items: center; gap: 14px; }
         .setting-slider {
           flex: 1; appearance: none;
           height: 6px; border-radius: 3px;
@@ -251,98 +250,97 @@ export default function PreGameScreen() {
           accent-color: #ff6b35;
         }
         .setting-value {
-          font-size: 18px; font-weight: 700; color: #ff6b35;
-          min-width: 70px; text-align: right;
+          font-size: clamp(15px,2.5vw,18px); font-weight: 700; color: #ff6b35;
+          min-width: 60px; text-align: right;
         }
         .setting-summary {
           background: rgba(255,255,255,0.04);
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 14px; padding: 20px;
-          display: flex; flex-direction: column; gap: 12px;
+          border-radius: 12px; padding: clamp(12px,2vh,20px);
+          display: flex; flex-direction: column; gap: 10px;
         }
-        .summary-item { display: flex; align-items: center; gap: 14px; }
-        .summary-icon { font-size: 22px; }
-        .summary-label { font-size: 11px; color: #556677; margin: 0; letter-spacing: 1px; }
-        .summary-val { font-size: 14px; font-weight: 600; color: #fff; margin: 0; }
+        .summary-item { display: flex; align-items: center; gap: 12px; }
+        .summary-icon { font-size: clamp(18px,2.8vw,22px); }
+        .summary-label { font-size: clamp(10px,1.4vw,11px); color: #556677; margin: 0; letter-spacing: 1px; }
+        .summary-val { font-size: clamp(12px,2vw,14px); font-weight: 600; color: #fff; margin: 0; }
         .pre-next-btn {
           background: linear-gradient(135deg, #ff6b35, #ff4500);
-          border: none; border-radius: 12px; color: #fff;
-          font-size: 16px; font-weight: 800; letter-spacing: 3px;
-          padding: 18px; cursor: pointer;
+          border: none; border-radius: 10px; color: #fff;
+          font-size: clamp(13px,2.2vw,16px); font-weight: 800; letter-spacing: 3px;
+          padding: clamp(14px,2.2vh,18px); cursor: pointer;
           transition: transform 0.1s;
+          -webkit-tap-highlight-color: transparent;
         }
-        .pre-next-btn:hover { transform: translateY(-2px); }
+        .pre-next-btn:active { transform: scale(0.97); }
 
-        /* Hero panel */
         .hero-panel {
           width: 100%; max-width: 900px;
-          display: flex; flex-direction: column; gap: 24px; align-items: center;
+          display: flex; flex-direction: column; gap: clamp(14px,2.5vh,24px); align-items: center;
         }
         .hero-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px; width: 100%;
+          grid-template-columns: repeat(auto-fit, minmax(clamp(140px,28vw,200px), 1fr));
+          gap: clamp(10px,1.5vw,16px); width: 100%;
         }
         .hero-card {
           background: rgba(255,255,255,0.04);
           border: 2px solid rgba(255,255,255,0.08);
-          border-radius: 16px; padding: 24px 18px;
-          display: flex; flex-direction: column; gap: 8px;
+          border-radius: clamp(10px,1.5vw,16px);
+          padding: clamp(14px,2.5vh,24px) clamp(10px,1.8vw,18px);
+          display: flex; flex-direction: column; gap: 6px;
           cursor: pointer; text-align: left;
           position: relative; overflow: hidden;
-          transition: all 0.2s;
+          transition: all 0.15s;
+          -webkit-tap-highlight-color: transparent;
         }
-        .hero-card:hover {
+        .hero-card:active {
           border-color: var(--hero-color);
-          background: color-mix(in srgb, var(--hero-color) 10%, transparent);
-          transform: translateY(-3px);
+          background: color-mix(in srgb, var(--hero-color) 12%, transparent);
+          transform: scale(0.98);
         }
         .hero-card-selected {
           border-color: var(--hero-color) !important;
           background: color-mix(in srgb, var(--hero-color) 15%, transparent) !important;
-          box-shadow: 0 0 20px color-mix(in srgb, var(--hero-color) 30%, transparent);
+          box-shadow: 0 0 16px color-mix(in srgb, var(--hero-color) 30%, transparent);
         }
-        .hero-icon { font-size: 36px; }
+        .hero-icon { font-size: clamp(24px,4vw,36px); }
         .hero-name {
-          font-size: 20px; font-weight: 800; color: #fff; margin: 0;
+          font-size: clamp(14px,2.5vw,20px); font-weight: 800; color: #fff; margin: 0;
         }
-        .hero-desc { font-size: 12px; color: #889aaa; margin: 0; line-height: 1.5; }
+        .hero-desc { font-size: clamp(10px,1.5vw,12px); color: #889aaa; margin: 0; line-height: 1.4; }
         .hero-stats { display: flex; flex-direction: column; gap: 6px; }
         .hero-stat { display: flex; align-items: center; gap: 8px; }
         .hero-stat-label { font-size: 10px; color: #667788; width: 20px; }
         .hero-hp-bar {
-          flex: 1; height: 6px; background: rgba(255,255,255,0.1);
+          flex: 1; height: 5px; background: rgba(255,255,255,0.1);
           border-radius: 3px; overflow: hidden;
         }
-        .hero-hp-fill {
-          height: 100%;
-          background: var(--hero-color);
-          border-radius: 3px;
-        }
+        .hero-hp-fill { height: 100%; background: var(--hero-color); border-radius: 3px; }
         .hero-stat-val { font-size: 11px; color: #aab; min-width: 25px; text-align: right; }
         .hero-skill-badge {
           background: rgba(255,255,255,0.05);
-          border-radius: 8px; padding: 8px 10px; margin-top: 4px;
+          border-radius: 8px; padding: clamp(6px,1vh,8px) 10px; margin-top: 2px;
         }
         .hero-skill-label {
-          font-size: 10px; font-weight: 700; color: var(--hero-color);
-          letter-spacing: 1px; display: block; margin-bottom: 4px;
+          font-size: clamp(9px,1.3vw,10px); font-weight: 700; color: var(--hero-color);
+          letter-spacing: 1px; display: block; margin-bottom: 3px;
         }
-        .hero-skill-desc { font-size: 11px; color: #778899; margin: 0; line-height: 1.4; }
+        .hero-skill-desc { font-size: clamp(9px,1.3vw,11px); color: #778899; margin: 0; line-height: 1.4; }
         .hero-selected-badge {
-          position: absolute; top: 12px; right: 12px;
+          position: absolute; top: 10px; right: 10px;
           background: var(--hero-color);
-          color: #fff; font-size: 10px; font-weight: 800;
-          border-radius: 6px; padding: 3px 8px; letter-spacing: 1px;
+          color: #fff; font-size: clamp(8px,1.2vw,10px); font-weight: 800;
+          border-radius: 6px; padding: 3px 7px; letter-spacing: 1px;
         }
         .pre-start-btn {
           background: linear-gradient(135deg, #ff6b35, #ff4500);
-          border: none; border-radius: 14px; color: #fff;
-          font-size: 17px; font-weight: 800; letter-spacing: 2px;
-          padding: 20px 40px; cursor: pointer;
-          transition: all 0.2s; width: 100%;
+          border: none; border-radius: 12px; color: #fff;
+          font-size: clamp(13px,2.2vw,17px); font-weight: 800; letter-spacing: 2px;
+          padding: clamp(14px,2.5vh,20px) clamp(20px,4vw,40px); cursor: pointer;
+          transition: all 0.15s; width: 100%;
+          -webkit-tap-highlight-color: transparent;
         }
-        .pre-start-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,107,53,0.4); }
+        .pre-start-btn:active:not(:disabled) { transform: scale(0.97); }
         .pre-start-btn:disabled { opacity: 0.3; cursor: not-allowed; }
       `}</style>
     </div>

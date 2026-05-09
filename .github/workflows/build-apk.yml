@@ -57,6 +57,16 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
+      - name: Force landscape orientation (patch AndroidManifest)
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if grep -q 'screenOrientation' "$MANIFEST"; then
+            sed -i 's/android:screenOrientation="[^"]*"/android:screenOrientation="sensorLandscape"/' "$MANIFEST"
+          else
+            sed -i 's/<activity /<activity android:screenOrientation="sensorLandscape" /' "$MANIFEST"
+          fi
+          echo "=== Manifest activity block after patch ===" && grep -A 3 '<activity' "$MANIFEST"
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 

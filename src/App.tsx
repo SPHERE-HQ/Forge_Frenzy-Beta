@@ -6,21 +6,33 @@ import MenuScreen from "./screens/MenuScreen";
 import PreGameScreen from "./screens/PreGameScreen";
 import GameScreen from "./screens/GameScreen";
 
+function forceLandscape() {
+  try {
+    const orient = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+    if (orient?.lock) {
+      orient.lock("landscape").catch(() => {});
+    }
+  } catch {}
+}
+
 export default function App() {
   const phase = useGameStore((s) => s.phase);
   const setNickname = useGameStore((s) => s.setNickname);
 
-  // Restore saved nickname on mount
   useEffect(() => {
     const saved = localStorage.getItem("ff_nickname");
     if (saved) setNickname(saved);
   }, [setNickname]);
 
-  // Force landscape orientation hint
+  // Paksa landscape — coba saat mount, dan setiap kali orientasi berubah
   useEffect(() => {
-    if (screen.orientation && typeof (screen.orientation as any).lock === "function") {
-      (screen.orientation as any).lock("landscape").catch(() => {});
-    }
+    forceLandscape();
+    window.addEventListener("orientationchange", forceLandscape);
+    screen.orientation?.addEventListener("change", forceLandscape);
+    return () => {
+      window.removeEventListener("orientationchange", forceLandscape);
+      screen.orientation?.removeEventListener("change", forceLandscape);
+    };
   }, []);
 
   return (

@@ -3,12 +3,15 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { PlayerState } from "../types/game";
 import { cameraState } from "./cameraState";
+import { checkCollision } from "./collisionData";
 
 const CAMERA_DISTANCE = 6;
 const CAMERA_HEIGHT = 3;
 const CAMERA_LAG = 0.1;
 const MIN_PITCH = -0.4;
 const MAX_PITCH = 0.6;
+const COLLISION_STEPS = 14;
+const MIN_CAM_DIST = 1.5;
 
 interface TPSCameraProps {
   player: PlayerState;
@@ -21,11 +24,11 @@ export default function TPSCamera({ player }: TPSCameraProps) {
   const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
   const rightTouchIdRef = useRef<number | null>(null);
   const targetPos = useRef(new THREE.Vector3());
+  const smoothDist = useRef(CAMERA_DISTANCE);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
     for (let i = 0; i < e.changedTouches.length; i++) {
       const t = e.changedTouches[i];
-      // Sisi kanan layar (60% ke kanan) untuk kontrol kamera
       if (t.clientX > window.innerWidth * 0.4 && rightTouchIdRef.current === null) {
         rightTouchIdRef.current = t.identifier;
         lastTouchRef.current = { x: t.clientX, y: t.clientY };
@@ -55,7 +58,6 @@ export default function TPSCamera({ player }: TPSCameraProps) {
     }
   }, []);
 
-  // Mouse fallback for desktop testing
   const mouseDown = useRef(false);
   const lastMouse = useRef<{ x: number; y: number } | null>(null);
   const handleMouseDown = useCallback((e: MouseEvent) => {
@@ -102,16 +104,35 @@ export default function TPSCamera({ player }: TPSCameraProps) {
     const cosY = Math.cos(yawRef.current);
     const sinY = Math.sin(yawRef.current);
 
-    const camX = px - sinY * cosP * CAMERA_DISTANCE;
-    const camY = py + sinP * CAMERA_DISTANCE + CAMERA_HEIGHT;
-    const camZ = pz - cosY * cosP * CAMERA_DISTANCE;
+    // Posisi kamera ideal tanpa halangan
+    const idealCamX = px - sinY * cosP * CAMERA_DISTANCE;
+    const idealCamZ = pz - cosY * cosP * CAMERA_DISTANCE;
 
-    camera.position.lerp(new THREE.Vector3(camX, camY, camZ), CAMERA_LAG + 0.05);
+    // Cek tabrakan — langkah dari karakter ke kamera, temukan jarak aman
+    let safeDist = CAMERA_DISTANCE;
+    for (let i = 1; i <= COLLISION_STEPS; i++) {
+      const frac = i / COLLISION_STEPS;
+      const testX = px + (idealCamX - px) * frac;
+      const testZ = pz + (idealCamZ - pz) * frac;
+      if (checkCollision(testX, testZ)) {
+        // Mundurkan sedikit dari titik tabrakan
+        safeDist = Math.max(MIN_CAM_DIST, CAMERA_DISTANCE * ((i - 1) / COLLISION_STEPS));
+        break;
+      }
+    }
+
+    // Halus-kan perpindahan jarak kamera (tidak langsung loncat)
+    smoothDist.current += (safeDist - smoothDist.current) * 0.18;
+    const d = smoothDist.current;
+
+    const finalCamX = px - sinY * cosP * d;
+    const finalCamY = py + sinP * d + CAMERA_HEIGHT;
+    const finalCamZ = pz - cosY * cosP * d;
+
+    camera.position.lerp(new THREE.Vector3(finalCamX, finalCamY, finalCamZ), CAMERA_LAG + 0.05);
     targetPos.current.set(px, py + 0.5, pz);
     camera.lookAt(targetPos.current);
 
-    // Tulis yaw ke shared state supaya gameStore bisa pakai untuk
-    // camera-relative movement
     cameraState.yaw = yawRef.current;
   });
 

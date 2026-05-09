@@ -22,7 +22,6 @@ export default function MenuScreen() {
     <div className="menu-root">
       <div className="menu-bg" />
 
-      {/* Header */}
       <div className="menu-header">
         <div className="menu-logo">
           <span className="menu-logo-icon">◈</span>
@@ -37,7 +36,6 @@ export default function MenuScreen() {
         </div>
       </div>
 
-      {/* Main content */}
       <div className="menu-center">
         {activeMenu === "main" && (
           <div className="menu-main-btns">
@@ -83,7 +81,6 @@ export default function MenuScreen() {
         )}
       </div>
 
-      {/* Footer */}
       <div className="menu-footer">
         <span>v0.1.0-beta · SPHERE-HQ © 2025</span>
       </div>
@@ -105,86 +102,88 @@ export default function MenuScreen() {
         .menu-header {
           position: relative; z-index: 1;
           display: flex; align-items: center; justify-content: space-between;
-          padding: 20px 30px;
+          padding: clamp(10px,1.5vh,20px) clamp(14px,3vw,30px);
           border-bottom: 1px solid rgba(255,255,255,0.06);
+          flex-shrink: 0;
         }
-        .menu-logo { display: flex; align-items: center; gap: 14px; }
-        .menu-logo-icon { font-size: 36px; color: #4fc3f7; text-shadow: 0 0 15px #4fc3f7; }
-        .menu-studio { font-size: 10px; letter-spacing: 4px; color: #4fc3f7; margin: 0; }
-        .menu-game-title { font-size: 24px; font-weight: 900; color: #fff; margin: 0; letter-spacing: 3px; }
+        .menu-logo { display: flex; align-items: center; gap: clamp(8px,1.5vw,14px); }
+        .menu-logo-icon { font-size: clamp(22px,4vw,36px); color: #4fc3f7; text-shadow: 0 0 15px #4fc3f7; }
+        .menu-studio { font-size: clamp(8px,1.2vw,10px); letter-spacing: 4px; color: #4fc3f7; margin: 0; }
+        .menu-game-title { font-size: clamp(14px,2.5vw,24px); font-weight: 900; color: #fff; margin: 0; letter-spacing: 3px; }
         .menu-player-badge {
-          display: flex; align-items: center; gap: 8px;
+          display: flex; align-items: center; gap: 6px;
           background: rgba(255,255,255,0.06);
           border: 1px solid rgba(255,255,255,0.1);
           border-radius: 20px;
-          padding: 8px 16px;
+          padding: clamp(5px,1vh,8px) clamp(10px,2vw,16px);
         }
-        .menu-player-icon { font-size: 16px; }
-        .menu-player-name { font-size: 14px; font-weight: 600; color: #fff; }
+        .menu-player-icon { font-size: clamp(12px,2vw,16px); }
+        .menu-player-name { font-size: clamp(11px,1.8vw,14px); font-weight: 600; color: #fff; }
         .menu-center {
           position: relative; z-index: 1;
           flex: 1; display: flex; align-items: center; justify-content: center;
-          padding: 20px;
+          padding: clamp(12px,2vh,20px) clamp(14px,3vw,24px);
+          min-height: 0;
         }
         .menu-main-btns {
-          display: flex; flex-direction: column; gap: 14px;
-          width: min(320px, 90vw);
+          display: flex; flex-direction: column; gap: clamp(8px,1.5vh,14px);
+          width: min(320px, 88vw);
         }
         .menu-btn {
-          display: flex; align-items: center; gap: 12px;
-          border-radius: 12px; border: none;
-          font-size: 15px; font-weight: 700; letter-spacing: 2px;
-          padding: 18px 24px; cursor: pointer;
+          display: flex; align-items: center; gap: 10px;
+          border-radius: 10px; border: none;
+          font-size: clamp(12px,2vw,15px); font-weight: 700; letter-spacing: 2px;
+          padding: clamp(12px,2vh,18px) clamp(14px,2.5vw,24px); cursor: pointer;
           transition: transform 0.1s, opacity 0.2s;
+          -webkit-tap-highlight-color: transparent;
         }
-        .menu-btn:hover { transform: translateX(4px); opacity: 0.9; }
-        .menu-btn:active { transform: translateX(0); }
+        .menu-btn:active { transform: scale(0.97); opacity: 0.85; }
         .menu-btn-primary {
           background: linear-gradient(135deg, #ff6b35, #ff4500);
-          color: #fff; font-size: 18px;
+          color: #fff; font-size: clamp(14px,2.4vw,18px);
         }
         .menu-btn-secondary {
           background: rgba(255,255,255,0.06);
           border: 1px solid rgba(255,255,255,0.1);
           color: #ccc;
         }
-        .menu-btn-icon { font-size: 18px; }
-        .mode-select { width: min(500px, 90vw); text-align: center; }
+        .menu-btn-icon { font-size: clamp(14px,2.2vw,18px); }
+        .mode-select { width: min(460px, 90vw); text-align: center; }
         .mode-back-btn {
           background: none; border: none; color: #778899; cursor: pointer;
-          font-size: 14px; padding: 8px 0; display: block; margin-bottom: 20px;
+          font-size: clamp(12px,1.8vw,14px); padding: 8px 0; display: block; margin-bottom: clamp(10px,2vh,20px);
+          -webkit-tap-highlight-color: transparent;
         }
-        .mode-back-btn:hover { color: #fff; }
+        .mode-back-btn:active { color: #fff; }
         .mode-title {
-          font-size: 18px; font-weight: 700; color: #fff;
-          letter-spacing: 2px; margin-bottom: 24px;
+          font-size: clamp(13px,2.2vw,18px); font-weight: 700; color: #fff;
+          letter-spacing: 2px; margin-bottom: clamp(12px,2vh,24px);
         }
-        .mode-cards { display: flex; flex-direction: column; gap: 12px; }
+        .mode-cards { display: flex; flex-direction: column; gap: clamp(8px,1.2vh,12px); }
         .mode-card {
-          display: flex; align-items: center; gap: 16px;
-          border-radius: 14px; border: 1.5px solid rgba(255,255,255,0.1);
-          padding: 20px 24px; cursor: pointer;
-          font-size: 16px; font-weight: 700; letter-spacing: 1px;
-          transition: all 0.2s; position: relative;
+          display: flex; align-items: center; gap: 14px;
+          border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.1);
+          padding: clamp(14px,2vh,20px) clamp(14px,2.5vw,24px); cursor: pointer;
+          font-size: clamp(13px,2vw,16px); font-weight: 700; letter-spacing: 1px;
+          transition: all 0.15s; position: relative;
+          -webkit-tap-highlight-color: transparent;
         }
         .mode-card-available {
-          background: rgba(255,107,53,0.1);
-          border-color: #ff6b35;
-          color: #fff;
+          background: rgba(255,107,53,0.1); border-color: #ff6b35; color: #fff;
         }
-        .mode-card-available:hover { background: rgba(255,107,53,0.2); transform: translateX(4px); }
+        .mode-card-available:active { background: rgba(255,107,53,0.25); }
         .mode-card-soon { background: rgba(255,255,255,0.03); color: #556677; }
-        .mode-card-icon { font-size: 24px; }
+        .mode-card-icon { font-size: clamp(18px,3vw,24px); }
         .mode-card-label { flex: 1; text-align: left; }
         .mode-badge {
-          font-size: 10px; background: rgba(255,255,255,0.1);
-          border-radius: 6px; padding: 3px 8px; color: #778899;
-          letter-spacing: 1px;
+          font-size: clamp(9px,1.2vw,10px); background: rgba(255,255,255,0.1);
+          border-radius: 6px; padding: 3px 8px; color: #778899; letter-spacing: 1px;
         }
         .menu-footer {
           position: relative; z-index: 1;
-          text-align: center; padding: 12px;
-          font-size: 11px; color: #334455; letter-spacing: 1px;
+          text-align: center; padding: clamp(6px,1vh,12px);
+          font-size: clamp(9px,1.2vw,11px); color: #334455; letter-spacing: 1px;
+          flex-shrink: 0;
         }
       `}</style>
     </div>

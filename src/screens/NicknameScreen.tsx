@@ -26,7 +26,10 @@ export default function NicknameScreen() {
   return (
     <div className="nickname-root">
       <div className="nickname-bg" />
-      <div className="nickname-card" style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)", transition: "all 0.5s ease" }}>
+      <div
+        className="nickname-card"
+        style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)", transition: "all 0.5s ease" }}
+      >
         <div className="nn-logo">◈</div>
         <h1 className="nn-title">FORGE FRENZY</h1>
         <p className="nn-sub">Masukkan Nickname-mu</p>
@@ -68,23 +71,23 @@ export default function NicknameScreen() {
           position: relative; z-index: 1;
           background: rgba(255,255,255,0.04);
           border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 20px;
-          padding: 48px 40px;
-          display: flex; flex-direction: column; align-items: center; gap: 20px;
-          width: min(380px, 90vw);
+          border-radius: clamp(14px,2vw,20px);
+          padding: clamp(28px,5vh,48px) clamp(20px,4vw,40px);
+          display: flex; flex-direction: column; align-items: center; gap: clamp(12px,2vh,20px);
+          width: min(380px, 88vw);
           backdrop-filter: blur(20px);
           box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
         .nn-logo {
-          font-size: 40px; color: #4fc3f7;
+          font-size: clamp(28px,5vw,40px); color: #4fc3f7;
           text-shadow: 0 0 20px #4fc3f7;
         }
         .nn-title {
-          font-size: 22px; font-weight: 900;
+          font-size: clamp(16px,3vw,22px); font-weight: 900;
           letter-spacing: 4px; color: #fff; margin: 0;
         }
         .nn-sub {
-          font-size: 13px; color: #778899; margin: 0;
+          font-size: clamp(10px,1.6vw,13px); color: #778899; margin: 0;
           text-transform: uppercase; letter-spacing: 2px;
         }
         .nn-input-wrap { width: 100%; }
@@ -93,8 +96,8 @@ export default function NicknameScreen() {
           background: rgba(255,255,255,0.06);
           border: 1.5px solid rgba(255,255,255,0.15);
           border-radius: 10px;
-          color: #fff; font-size: 18px; font-weight: 600;
-          padding: 14px 18px;
+          color: #fff; font-size: clamp(15px,2.5vw,18px); font-weight: 600;
+          padding: clamp(10px,1.8vh,14px) clamp(12px,2vw,18px);
           outline: none;
           text-align: center;
           letter-spacing: 2px;
@@ -103,23 +106,23 @@ export default function NicknameScreen() {
         .nn-input:focus { border-color: #4fc3f7; }
         .nn-input::placeholder { color: #445566; font-weight: 400; letter-spacing: 1px; }
         .nn-error {
-          color: #ff6b6b; font-size: 12px; margin: 6px 0 0;
+          color: #ff6b6b; font-size: clamp(10px,1.5vw,12px); margin: 6px 0 0;
           text-align: center;
         }
         .nn-btn {
           width: 100%;
           background: linear-gradient(135deg, #ff6b35, #ff4500);
           border: none; border-radius: 10px;
-          color: #fff; font-size: 16px; font-weight: 800;
+          color: #fff; font-size: clamp(13px,2.2vw,16px); font-weight: 800;
           letter-spacing: 3px;
-          padding: 16px;
+          padding: clamp(12px,2vh,16px);
           cursor: pointer;
           transition: transform 0.1s, opacity 0.2s;
+          -webkit-tap-highlight-color: transparent;
         }
-        .nn-btn:hover:not(:disabled) { transform: translateY(-1px); opacity: 0.9; }
-        .nn-btn:active:not(:disabled) { transform: translateY(0); }
+        .nn-btn:active:not(:disabled) { transform: scale(0.97); opacity: 0.85; }
         .nn-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .nn-hint { font-size: 11px; color: #445566; margin: 0; }
+        .nn-hint { font-size: clamp(9px,1.3vw,11px); color: #445566; margin: 0; }
       `}</style>
     </div>
   );
