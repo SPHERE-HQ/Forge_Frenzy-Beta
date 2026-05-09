@@ -65,55 +65,25 @@ jobs:
           else
             sed -i 's/<activity /<activity android:screenOrientation="sensorLandscape" /' "$MANIFEST"
           fi
-          echo "=== Manifest activity block ===" && grep -A 3 '<activity' "$MANIFEST"
+          grep -A 3 '<activity' "$MANIFEST"
 
       - name: Setup keystore for signing
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > android/app/forge-frenzy.jks
-          echo "✓ Keystore decoded: $(stat -c%s android/app/forge-frenzy.jks) bytes"
+          echo "Keystore size: $(stat -c%s android/app/forge-frenzy.jks) bytes"
 
       - name: Patch build.gradle with signing config
         run: |
-          python3 - android/app/build.gradle << 'PYEOF'
-import sys, re
-
-path = sys.argv[1]
-with open(path) as f:
-    content = f.read()
-
-signing_block = """
-    signingConfigs {
-        release {
-            storeFile file("forge-frenzy.jks")
-            storePassword System.getenv("KEYSTORE_PASSWORD")
-            keyAlias System.getenv("KEY_ALIAS")
-            keyPassword System.getenv("KEY_PASSWORD")
-        }
-    }
-"""
-
-# Sisipkan signingConfigs setelah "android {" pertama
-content = re.sub(r'(android \{)', r'\1' + signing_block, content, count=1)
-
-# Tambahkan signingConfig ke dalam release buildType
-content = re.sub(
-    r'(release \s*\{)',
-    r'\1\n            signingConfig signingConfigs.release',
-    content, count=1, flags=re.DOTALL
-)
-
-with open(path, 'w') as f:
-    f.write(content)
-print("✓ build.gradle patched with signing config")
-PYEOF
+          echo "aW1wb3J0IHN5cywgcmUKCnBhdGggPSBzeXMuYXJndlsxXQp3aXRoIG9wZW4ocGF0aCkgYXMgZjoKICAgIGNvbnRlbnQgPSBmLnJlYWQoKQoKc2lnbmluZ19ibG9jayA9ICcnJwogICAgc2lnbmluZ0NvbmZpZ3MgewogICAgICAgIHJlbGVhc2UgewogICAgICAgICAgICBzdG9yZUZpbGUgZmlsZSgiZm9yZ2UtZnJlbnp5LmprcyIpCiAgICAgICAgICAgIHN0b3JlUGFzc3dvcmQgU3lzdGVtLmdldGVudigiS0VZU1RPUkVfUEFTU1dPUkQiKQogICAgICAgICAgICBrZXlBbGlhcyBTeXN0ZW0uZ2V0ZW52KCJLRVlfQUxJQVMiKQogICAgICAgICAgICBrZXlQYXNzd29yZCBTeXN0ZW0uZ2V0ZW52KCJLRVlfUEFTU1dPUkQiKQogICAgICAgIH0KICAgIH0KJycnCgojIFNpc2lwa2FuIHNpZ25pbmdDb25maWdzIHNldGVsYWggImFuZHJvaWQgeyIKY29udGVudCA9IHJlLnN1YihyJyhhbmRyb2lkIFx7KScsIHInXDEnICsgc2lnbmluZ19ibG9jaywgY29udGVudCwgY291bnQ9MSkKCiMgVGFtYmFoIHNpZ25pbmdDb25maWcgZGkgZGVidWcgYnVpbGRUeXBlIChhZ2FyIGRlYnVnIEFQSyBwYWthaSBrZXlzdG9yZSBraXRhKQpjb250ZW50ID0gcmUuc3ViKAogICAgcicoZGVidWdccypceyknLAogICAgcidcMVxuICAgICAgICAgICAgc2lnbmluZ0NvbmZpZyBzaWduaW5nQ29uZmlncy5yZWxlYXNlJywKICAgIGNvbnRlbnQsIGNvdW50PTEsIGZsYWdzPXJlLkRPVEFMTAopCgp3aXRoIG9wZW4ocGF0aCwgJ3cnKSBhcyBmOgogICAgZi53cml0ZShjb250ZW50KQpwcmludCgiT0s6IGJ1aWxkLmdyYWRsZSBwYXRjaGVkIHdpdGggc2lnbmluZyBjb25maWciKQo=" | base64 -d > /tmp/patch_gradle.py
+          python3 /tmp/patch_gradle.py android/app/build.gradle
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build signed release APK
-        run: ./gradlew assembleRelease --no-daemon
+      - name: Build signed debug APK
+        run: ./gradlew assembleDebug --no-daemon
         working-directory: android
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
@@ -121,22 +91,21 @@ PYEOF
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Locate release APK
-        run: |
-          find android/app/build/outputs/apk -name "*.apk" -ls
+      - name: Locate APK
+        run: find android/app/build/outputs/apk -name "*.apk" -ls
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: forge-frenzy-release-${{ github.run_number }}
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: forge-frenzy-signed-${{ github.run_number }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
       - name: Upload APK to release (on tag)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: android/app/build/outputs/apk/release/app-release.apk
+          files: android/app/build/outputs/apk/debug/app-debug.apk
           name: Forge Frenzy ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
